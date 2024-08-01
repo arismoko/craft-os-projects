@@ -1,4 +1,4 @@
--- keybinds.lua
+--- keybinds.lua
 
 local function setupKeybinds(avim, Model, View, modes)
     -- Normal mode keybindings

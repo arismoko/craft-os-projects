@@ -473,7 +473,6 @@ local function handleInsertMode(model, view)
         view:updateCursor(model)
     end
 end
-
 local function handleVisualMode(model, view)
     view:drawScreen(model, view:getScreenWidth(), view:getScreenHeight())
     print("Entered Visual Mode")  -- Debugging statement
