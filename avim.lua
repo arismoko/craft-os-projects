@@ -45,7 +45,7 @@ local function isModifierPressed(modifier)
     end
 end
 
--- Function to handle key events based on mode
+-- Function to handle key events
 local function handleKeyEvent(mode, param1, model, view)
     local keyCombo = keys.getName(param1)  -- Get the main key name
 
@@ -76,13 +76,37 @@ local function handleKeyEvent(mode, param1, model, view)
     end
 end
 
--- Function to handle char events (for checking uppercase and lowercase distinctions)
+-- Function to handle char events (only used in insert mode)
 local function handleCharEvent(mode, char, model, view)
     if KeyMap[mode][char] then
         local mapping = KeyMap[mode][char]
         mapping.callback()
     else
         print("Unmapped char:", char, "in mode:", mode)  -- Debugging statement
+    end
+end
+
+-- Central event loop
+local function eventLoop(mode, model, view)
+    while not model.shouldExit do
+        if mode == "normal" then
+            local event, param1 = os.pullEvent("key")
+            handleKeyEvent(mode, param1, model, view)
+        else
+            local event, param1 = os.pullEvent()
+            if event == "key" then
+                handleKeyEvent(mode, param1, model, view)
+            elseif event == "char" then
+                handleCharEvent(mode, param1, model, view)
+            end
+        end
+
+        if model:updateScroll(view:getScreenHeight()) then
+            view:drawScreen(model, view:getScreenWidth(), view:getScreenHeight())
+        else
+            view:drawLine(model, model.cursorY - model.scrollOffset)
+        end
+        view:updateCursor(model)
     end
 end
 
@@ -193,8 +217,7 @@ function Model:loadFile(name, view)
         table.insert(self.buffer, "")
     end
     self.statusMessage = "Loaded file: " .. self.filename
-    -- Transition to Normal mode after loading the file
-    self.modes.handleNormalMode(self, view )
+    self.modes.handleNormalMode(self, view)
 end
 
 function Model:saveFile()
@@ -270,7 +293,6 @@ function Model:paste()
     self.statusMessage = "Pasted text"
 end
 
--- New function to handle yanking the highlighted text in visual mode
 function Model:yankSelection()
     local startX, startY = math.min(self.cursorX, self.visualStartX), math.min(self.cursorY, self.visualStartY)
     local endX, endY = math.max(self.cursorX, self.visualStartX), math.max(self.cursorY, self.visualStartY)
@@ -294,7 +316,6 @@ function Model:yankSelection()
     self.statusMessage = "Yanked selection"
 end
 
--- New function to handle cutting the highlighted text in visual mode
 function Model:cutSelection()
     self:saveToHistory()
     local startX, startY = math.min(self.cursorX, self.visualStartX), math.min(self.cursorY, self.visualStartY)
@@ -334,7 +355,6 @@ function Model:cutSelection()
     self.statusMessage = "Cut selection"
 end
 
--- Function to cut the current line in normal mode
 function Model:cutLine()
     self:saveToHistory()
     self.yankRegister = self.buffer[self.cursorY]  -- Store the current line in yankRegister
@@ -427,14 +447,16 @@ end
 local function handleNormalMode(model, view)
     view:drawScreen(model, view:getScreenWidth(), view:getScreenHeight())
     print("Entered Normal Mode")  -- Debugging statement
-    while not model.shouldExit do  -- Check the exit flag here
-        local event, param1 = os.pullEvent()
-        if event == "key" then
-            handleKeyEvent("normal", param1, model, view)
-        elseif event == "char" then
-            handleCharEvent("normal", param1, model, view)
-        end
+    
+    -- Event loop to keep handling events until the program should exit
+    while not model.shouldExit do
+        -- Only pull for "key" events
+        local event, param1 = os.pullEvent("key")
+        
+        -- Handle the key event
+        handleKeyEvent("normal", param1, model, view)
 
+        -- Update the view based on cursor and scroll changes
         if model:updateScroll(view:getScreenHeight()) then
             view:drawScreen(model, view:getScreenWidth(), view:getScreenHeight())
         else
@@ -473,6 +495,7 @@ local function handleInsertMode(model, view)
         view:updateCursor(model)
     end
 end
+
 local function handleVisualMode(model, view)
     view:drawScreen(model, view:getScreenWidth(), view:getScreenHeight())
     print("Entered Visual Mode")  -- Debugging statement
