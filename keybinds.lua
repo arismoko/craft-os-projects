@@ -20,15 +20,16 @@ local function setupKeybinds(avim, Model, View, modes)
         Model.cursorX = math.min(Model.cursorX, #Model.buffer[Model.cursorY] + 1)
     end)
 
-    avim.keys.map("normal", "i", function()
+    avim.keys.map("normal", "l", function()
         Model.cursorX = math.min(#Model.buffer[Model.cursorY] + 1, Model.cursorX + 1)
     end)
+
     avim.keys.map("normal", "y", function()
-        Model:yankLine()  -- Regular yank line with lowercase 'y'
+        Model:yankLine()
     end)
 
     avim.keys.map("normal", "Y", function()
-        Model:yankLine()  -- Yank line, but using the 'Y' uppercase for emphasis (or different action)
+        Model:yankLine()
         Model.statusMessage = "Yanked entire line"
         View:drawStatusBar(Model, View:getScreenWidth(), View:getScreenHeight())
     end)
@@ -41,14 +42,36 @@ local function setupKeybinds(avim, Model, View, modes)
     end)
 
     avim.keys.map("normal", "d", function()
-        Model:cutLine()  -- Regular delete/cut line with lowercase 'd'
+        Model:cutLine()
         View:drawScreen(Model, View:getScreenWidth(), View:getScreenHeight())
     end)
 
     avim.keys.map("normal", "D", function()
-        Model:cutLine()  -- Uppercase 'D' could be used for a different kind of deletion
+        Model:cutLine()
         Model.statusMessage = "Deleted entire line"
         View:drawStatusBar(Model, View:getScreenWidth(), View:getScreenHeight())
+    end)
+
+    avim.keys.map("normal", "x", function()
+        Model:saveToHistory()
+        Model:backspace()
+        View:drawScreen(Model, View:getScreenWidth(), View:getScreenHeight())
+    end)
+
+    avim.keys.map("normal", "u", function()
+        Model:undo()
+        View:drawScreen(Model, View:getScreenWidth(), View:getScreenHeight())
+    end)
+
+    avim.keys.map("normal", "ctrl + r", function()
+        Model:redo()
+        View:drawScreen(Model, View:getScreenWidth(), View:getScreenHeight())
+    end)
+
+    avim.keys.map("normal", "o", function()
+        Model:saveToHistory()
+        Model:enter()
+        modes.handleInsertMode(Model, View)
     end)
 
     avim.keys.map("normal", "c^ + x", function()
@@ -83,6 +106,32 @@ local function setupKeybinds(avim, Model, View, modes)
     end)
 
     -- Visual mode keybindings
+    avim.keys.map("visual", "h", function()
+        Model.cursorX = math.max(1, Model.cursorX - 1)
+        View:drawScreen(Model, View:getScreenWidth(), View:getScreenHeight())
+    end)
+
+    avim.keys.map("visual", "j", function()
+        if Model.cursorY < #Model.buffer then
+            Model.cursorY = Model.cursorY + 1
+        end
+        Model.cursorX = math.min(Model.cursorX, #Model.buffer[Model.cursorY] + 1)
+        View:drawScreen(Model, View:getScreenWidth(), View:getScreenHeight())
+    end)
+
+    avim.keys.map("visual", "k", function()
+        if Model.cursorY > 1 then
+            Model.cursorY = Model.cursorY - 1
+        end
+        Model.cursorX = math.min(Model.cursorX, #Model.buffer[Model.cursorY] + 1)
+        View:drawScreen(Model, View:getScreenWidth(), View:getScreenHeight())
+    end)
+
+    avim.keys.map("visual", "l", function()
+        Model.cursorX = math.min(#Model.buffer[Model.cursorY] + 1, Model.cursorX + 1)
+        View:drawScreen(Model, View:getScreenWidth(), View:getScreenHeight())
+    end)
+
     avim.keys.map("visual", "y", function()
         Model:yankSelection()
         Model:endVisualMode()
@@ -95,8 +144,25 @@ local function setupKeybinds(avim, Model, View, modes)
         modes.handleNormalMode(Model, View)
     end)
 
+    avim.keys.map("visual", "x", function()
+        Model:cutSelection()  -- Similar to 'd' but perhaps for single character cuts in visual mode
+        View:drawScreen(Model, View:getScreenWidth(), View:getScreenHeight())
+        modes.handleNormalMode(Model, View)
+    end)
+
+    avim.keys.map("visual", "o", function()
+        -- Toggle visual selection mode (could be a different behavior you want to implement)
+        Model:endVisualMode()
+        Model:startVisualMode()
+    end)
+
     avim.keys.map("visual", "escape", function()
         Model:endVisualMode()
+        modes.handleNormalMode(Model, View)
+    end)
+
+    -- Insert mode keybindings
+    avim.keys.map("insert", "escape", function()
         modes.handleNormalMode(Model, View)
     end)
 end
