@@ -43,7 +43,17 @@ end
 -- Function to add key mappings
 function avim.keys.map(mode, keyCombo, callback)
     local modifiers, mainKey = parseKeyCombo(keyCombo)
-    local comboKey = table.concat(modifiers, "+") .. (mainKey and "+" .. mainKey or "")
+    local comboKey
+    if #modifiers > 0 then
+        comboKey = table.concat(modifiers, "+") .. (mainKey and "+" .. mainKey or "")
+    else
+        comboKey = mainKey
+    end
+
+    if not KeyMap[mode] then
+        KeyMap[mode] = {}
+    end
+
     KeyMap[mode][comboKey] = callback
     print("Mapped key:", comboKey, "to mode:", mode) -- Debugging statement
 end
@@ -63,13 +73,16 @@ local function handleKeyPress(key, isDown, model, view)
         table.insert(combo, keys.getName(key))
         local comboKey = table.concat(combo, "+")
 
-        -- Trigger action based on the combo
+        -- Trigger action based on the combo or single key press
         if isDown then
             if KeyMap[model.mode][comboKey] then
                 print("Executing action for comboKey:", comboKey) -- Debugging statement
                 KeyMap[model.mode][comboKey]()
+            elseif KeyMap[model.mode][keys.getName(key)] then
+                print("Executing action for single key:", keys.getName(key)) -- Debugging statement
+                KeyMap[model.mode][keys.getName(key)]()
             else
-                print("Unmapped key:", comboKey, "in mode:", model.mode)  -- Debugging statement
+                print("Unmapped key:", comboKey, "or", keys.getName(key), "in mode:", model.mode)  -- Debugging statement
             end
         end
     end
