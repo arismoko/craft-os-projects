@@ -46,7 +46,7 @@ local function isModifierPressed(modifier)
 end
 
 -- Function to handle key events based on mode
-local function handleKeyEvent(mode, param1)
+local function handleKeyEvent(mode, param1, model, view)
     local keyCombo = keys.getName(param1)  -- Get the main key name
 
     if KeyMap[mode][keyCombo] then
@@ -66,19 +66,23 @@ local function handleKeyEvent(mode, param1)
 
         -- Update status line for Ctrl or Alt presses
         if isModifierPressed("ctrl") then
-            Model.statusMessage = "Ctrl pressed!"
+            model.statusMessage = "Ctrl pressed!"
         elseif isModifierPressed("alt") then
-            Model.statusMessage = "Alt pressed!"
+            model.statusMessage = "Alt pressed!"
         end
-        View:drawStatusBar(Model, View:getScreenWidth(), View:getScreenHeight())
+        view:drawStatusBar(model, view:getScreenWidth(), view:getScreenHeight())
+    else
+        print("Unmapped key:", keyCombo, "in mode:", mode)  -- Debugging statement
     end
 end
 
 -- Function to handle char events (for checking uppercase and lowercase distinctions)
-local function handleCharEvent(mode, char)
+local function handleCharEvent(mode, char, model, view)
     if KeyMap[mode][char] then
         local mapping = KeyMap[mode][char]
         mapping.callback()
+    else
+        print("Unmapped char:", char, "in mode:", mode)  -- Debugging statement
     end
 end
 
@@ -96,7 +100,8 @@ local Model = {
     history = {},
     redoStack = {},
     statusMessage = "",
-    shouldExit = false  -- New flag to signal when to exit
+    shouldExit = false,  -- New flag to signal when to exit
+    modes = {}  -- Store mode-handling functions here
 }
 
 -- Function to save the current state to history
@@ -175,7 +180,7 @@ function Model:endVisualMode()
     self.statusMessage = "Exited visual mode"
 end
 
-function Model:loadFile(name)
+function Model:loadFile(name, view)
     self.filename = name
     self.buffer = {}
     if fs.exists(self.filename) then
@@ -188,6 +193,8 @@ function Model:loadFile(name)
         table.insert(self.buffer, "")
     end
     self.statusMessage = "Loaded file: " .. self.filename
+    -- Transition to Normal mode after loading the file
+    self.modes.handleNormalMode(self, view)
 end
 
 function Model:saveFile()
@@ -419,12 +426,13 @@ end
 -- Mode Handlers
 local function handleNormalMode(model, view)
     view:drawScreen(model, view:getScreenWidth(), view:getScreenHeight())
+    print("Entered Normal Mode")  -- Debugging statement
     while not model.shouldExit do  -- Check the exit flag here
         local event, param1 = os.pullEvent()
         if event == "key" then
-            handleKeyEvent("normal", param1)
+            handleKeyEvent("normal", param1, model, view)
         elseif event == "char" then
-            handleCharEvent("normal", param1)
+            handleCharEvent("normal", param1, model, view)
         end
 
         if model:updateScroll(view:getScreenHeight()) then
@@ -440,6 +448,7 @@ local function handleInsertMode(model, view)
     term.setCursorBlink(true)
     model.statusMessage = "Insert mode"
     view:drawStatusBar(model, view:getScreenWidth(), view:getScreenHeight())
+    print("Entered Insert Mode")  -- Debugging statement
 
     while true do
         local event, param1 = os.pullEvent()
@@ -447,7 +456,7 @@ local function handleInsertMode(model, view)
             model:insertChar(param1)
             view:drawLine(model, model.cursorY - model.scrollOffset)
         elseif event == "key" then
-            handleKeyEvent("insert", param1)
+            handleKeyEvent("insert", param1, model, view)
             if param1 == keys.backspace then
                 model:backspace()
                 view:drawLine(model, model.cursorY - model.scrollOffset)
@@ -467,9 +476,10 @@ end
 
 local function handleVisualMode(model, view)
     view:drawScreen(model, view:getScreenWidth(), view:getScreenHeight())
+    print("Entered Visual Mode")  -- Debugging statement
     while true do
         local event, param1 = os.pullEvent("key")
-        handleKeyEvent("visual", param1)
+        handleKeyEvent("visual", param1, model, view)
 
         if param1 == keys.v then
             model:endVisualMode()
@@ -510,6 +520,11 @@ setupKeybinds(avim, Model, View, {
     handleVisualMode = handleVisualMode
 })
 
+-- Store mode handlers in the Model for easy access
+Model.modes.handleNormalMode = handleNormalMode
+Model.modes.handleInsertMode = handleInsertMode
+Model.modes.handleVisualMode = handleVisualMode
+
 local function LaunchScreen()
     term.clear()
     term.setCursorPos(1, 1)
@@ -524,20 +539,19 @@ local function LaunchScreen()
             term.setCursorPos(1, 1)
             print("Enter filename:")
             Model.filename = read()
-            Model:loadFile(Model.filename)
-            handleNormalMode(Model, View)
+            Model:loadFile(Model.filename, View)  -- Pass View here
         elseif param1 == keys.o then
             term.clear()
             term.setCursorPos(1, 1)
             print("Enter filename:")
             Model.filename = read()
-            Model:loadFile(Model.filename)
-            handleNormalMode(Model, View)
+            Model:loadFile(Model.filename, View)  -- Pass View here
         elseif param1 == keys.q then
             Model.shouldExit = true  -- Set the exit flag
         end
     end
 end
+
 
 LaunchScreen()
 
