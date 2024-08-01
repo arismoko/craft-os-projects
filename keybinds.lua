@@ -20,7 +20,7 @@ local function setupKeybinds(avim, Model, View, modes)
         Model.cursorX = math.min(Model.cursorX, #Model.buffer[Model.cursorY] + 1)
     end)
 
-    avim.keys.map("normal", "l", function()
+    avim.keys.map("normal", "i", function()
         Model.cursorX = math.min(#Model.buffer[Model.cursorY] + 1, Model.cursorX + 1)
     end)
     avim.keys.map("normal", "y", function()

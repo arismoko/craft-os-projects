@@ -180,7 +180,7 @@ function Model:endVisualMode()
     self.statusMessage = "Exited visual mode"
 end
 
-function Model:loadFile(name, view)
+function Model:loadFile(name)
     self.filename = name
     self.buffer = {}
     if fs.exists(self.filename) then
@@ -194,7 +194,7 @@ function Model:loadFile(name, view)
     end
     self.statusMessage = "Loaded file: " .. self.filename
     -- Transition to Normal mode after loading the file
-    self.modes.handleNormalMode(self, view)
+    self.modes.handleNormalMode(self, View)
 end
 
 function Model:saveFile()
@@ -539,19 +539,18 @@ local function LaunchScreen()
             term.setCursorPos(1, 1)
             print("Enter filename:")
             Model.filename = read()
-            Model:loadFile(Model.filename, View)  -- Pass View here
+            Model:loadFile(Model.filename)
         elseif param1 == keys.o then
             term.clear()
             term.setCursorPos(1, 1)
             print("Enter filename:")
             Model.filename = read()
-            Model:loadFile(Model.filename, View)  -- Pass View here
+            Model:loadFile(Model.filename)
         elseif param1 == keys.q then
             Model.shouldExit = true  -- Set the exit flag
         end
     end
 end
-
 
 LaunchScreen()
 
