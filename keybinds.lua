@@ -2,45 +2,27 @@
 
 local function setupKeybinds(avim, Model, View, modes)
     -- Normal mode keybindings
-    avim.keys.map("normal", "up", function()
-        Model.cursorY = math.max(1, Model.cursorY - 1)
-        if Model:updateScroll(View:getScreenHeight()) then
-            View:drawScreen(Model, View:getScreenWidth(), View:getScreenHeight())
-        else
-            View:drawLine(Model, Model.cursorY - Model.scrollOffset)
-        end
-        View:updateCursor(Model)
-    end)
     avim.keys.map("normal", "h", function()
         Model.cursorX = math.max(1, Model.cursorX - 1)
-        View:updateCursor(Model)
     end)
-    
+
     avim.keys.map("normal", "j", function()
-        Model.cursorY = math.min(#Model.buffer, Model.cursorY + 1)
-        if Model:updateScroll(View:getScreenHeight()) then
-            View:drawScreen(Model, View:getScreenWidth(), View:getScreenHeight())
-        else
-            View:drawLine(Model, Model.cursorY - Model.scrollOffset)
+        if Model.cursorY < #Model.buffer then
+            Model.cursorY = Model.cursorY + 1
         end
-        View:updateCursor(Model)
+        Model.cursorX = math.min(Model.cursorX, #Model.buffer[Model.cursorY] + 1)
     end)
-    
+
     avim.keys.map("normal", "k", function()
-        Model.cursorY = math.max(1, Model.cursorY - 1)
-        if Model:updateScroll(View:getScreenHeight()) then
-            View:drawScreen(Model, View:getScreenWidth(), View:getScreenHeight())
-        else
-            View:drawLine(Model, Model.cursorY - Model.scrollOffset)
+        if Model.cursorY > 1 then
+            Model.cursorY = Model.cursorY - 1
         end
-        View:updateCursor(Model)
+        Model.cursorX = math.min(Model.cursorX, #Model.buffer[Model.cursorY] + 1)
     end)
-    
+
     avim.keys.map("normal", "l", function()
-        Model.cursorX = math.min(#Model.buffer[Model.cursorY], Model.cursorX + 1)
-        View:updateCursor(Model)
+        Model.cursorX = math.min(#Model.buffer[Model.cursorY] + 1, Model.cursorX + 1)
     end)
-        
     avim.keys.map("normal", "y", function()
         Model:yankLine()  -- Regular yank line with lowercase 'y'
     end)
