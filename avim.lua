@@ -24,6 +24,29 @@ local modifierKeys = {
     [keys.rightAlt] = "alt"
 }
 
+-- Function to parse key combinations
+local function parseKeyCombo(combo)
+    local modifiers = {}
+    local mainKey
+
+    for part in combo:gmatch("[^%s+]+") do
+        if part == "ctrl" or part == "shift" or part == "alt" then
+            table.insert(modifiers, part)
+        else
+            mainKey = part
+        end
+    end
+
+    return modifiers, mainKey
+end
+
+-- Function to add key mappings
+function avim.keys.map(mode, keyCombo, callback)
+    local modifiers, mainKey = parseKeyCombo(keyCombo)
+    local comboKey = table.concat(modifiers, "+") .. (mainKey and "+" .. mainKey or "")
+    KeyMap[mode][comboKey] = callback
+end
+
 -- Function to handle key presses and releases
 local function handleKeyPress(key, isDown, model, view)
     if modifierKeys[key] then
