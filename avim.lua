@@ -45,6 +45,7 @@ function avim.keys.map(mode, keyCombo, callback)
     local modifiers, mainKey = parseKeyCombo(keyCombo)
     local comboKey = table.concat(modifiers, "+") .. (mainKey and "+" .. mainKey or "")
     KeyMap[mode][comboKey] = callback
+    print("Mapped key:", comboKey, "to mode:", mode) -- Debugging statement
 end
 
 -- Function to handle key presses and releases
@@ -52,6 +53,7 @@ local function handleKeyPress(key, isDown, model, view)
     if modifierKeys[key] then
         -- Update the state of the modifier key (pressed or released)
         keyStates[modifierKeys[key]] = isDown
+        print("Modifier key:", keys.getName(key), "is now", isDown and "down" or "up") -- Debugging statement
     else
         -- Create a combination key string
         local combo = {}
@@ -64,6 +66,7 @@ local function handleKeyPress(key, isDown, model, view)
         -- Trigger action based on the combo
         if isDown then
             if KeyMap[model.mode][comboKey] then
+                print("Executing action for comboKey:", comboKey) -- Debugging statement
                 KeyMap[model.mode][comboKey]()
             else
                 print("Unmapped key:", comboKey, "in mode:", model.mode)  -- Debugging statement
@@ -87,7 +90,7 @@ end
 local function eventLoop(mode, model, view)
     while not model.shouldExit do
         local event, param1 = os.pullEvent()
-        
+
         if event == "key" or event == "key_up" then
             handleKeyEvent(mode, model, view)
         elseif event == "char" then
