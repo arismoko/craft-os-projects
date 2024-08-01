@@ -77,6 +77,16 @@ local function handleKeyEvent(mode, param1, model, view)
     end
 end
 
+-- Function to handle char events (only used in insert mode)
+local function handleCharEvent(mode, char, model, view)
+    if KeyMap[mode][char] then
+        local mapping = KeyMap[mode][char]
+        mapping.callback()
+    else
+        print("Unmapped char:", char, "in mode:", mode)  -- Debugging statement
+    end
+end
+
 -- Command mapping table
 local commands = {}
 
@@ -139,6 +149,8 @@ local function eventLoop(mode, model, view)
             local event, param1 = os.pullEvent()
             if event == "key" then
                 handleKeyEvent(mode, param1, model, view)
+            elseif event == "char" then
+                handleCharEvent(mode, param1, model, view)
             end
         end
 
