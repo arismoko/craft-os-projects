@@ -5,75 +5,79 @@ local avim = { keys = {} }
 local KeyMap = {
     normal = {},
     insert = {},
-    visual = {},  -- Visual mode
-    command = {}  -- Command mode
+    visual = {},
+    command = {}
 }
 
--- Function to parse key combinations
-local function parseKeyCombo(combo)
-    local modifiers = {}
-    local mainKey
+local keyStates = {
+    shift = false,
+    ctrl = false,
+    alt = false
+}
 
-    for part in combo:gmatch("[^%s+]+") do
-        if part == "ctrl" or part == "shift" or part == "alt" then
-            table.insert(modifiers, part)
-        elseif part == "c^" then
-            table.insert(modifiers, "ctrl")
-        elseif part == "a^" then
-            table.insert(modifiers, "alt")
-        else
-            mainKey = part
-        end
-    end
+local modifierKeys = {
+    [keys.leftShift] = "shift",
+    [keys.rightShift] = "shift",
+    [keys.leftCtrl] = "ctrl",
+    [keys.rightCtrl] = "ctrl",
+    [keys.leftAlt] = "alt",
+    [keys.rightAlt] = "alt"
+}
 
-    return modifiers, mainKey
-end
-
--- Function to add key mappings
-function avim.keys.map(mode, keyCombo, callback)
-    local modifiers, mainKey = parseKeyCombo(keyCombo)
-    KeyMap[mode][mainKey] = {callback = callback, modifiers = modifiers}
-end
-
--- Function to check if a modifier key is pressed
-local function isModifierPressed(modifier)
-    if modifier == "ctrl" then
-        return keys.leftCtrl or keys.rightCtrl
-    elseif modifier == "alt" then
-        return keys.leftAlt or keys.rightAlt
+-- Function to handle key presses and releases
+local function handleKeyPress(key, isDown, model, view)
+    if modifierKeys[key] then
+        -- Update the state of the modifier key (pressed or released)
+        keyStates[modifierKeys[key]] = isDown
     else
-        return false
+        -- Create a combination key string
+        local combo = {}
+        if keyStates["ctrl"] then table.insert(combo, "ctrl") end
+        if keyStates["shift"] then table.insert(combo, "shift") end
+        if keyStates["alt"] then table.insert(combo, "alt") end
+        table.insert(combo, keys.getName(key))
+        local comboKey = table.concat(combo, "+")
+
+        -- Trigger action based on the combo
+        if isDown then
+            if KeyMap[model.mode][comboKey] then
+                KeyMap[model.mode][comboKey]()
+            else
+                print("Unmapped key:", comboKey, "in mode:", model.mode)  -- Debugging statement
+            end
+        end
     end
 end
 
 -- Function to handle key events
-local function handleKeyEvent(mode, param1, model, view)
-    local keyCombo = keys.getName(param1)  -- Get the main key name
+local function handleKeyEvent(mode, model, view)
+    local event, key = os.pullEvent()
 
-    if KeyMap[mode][keyCombo] then
-        local mapping = KeyMap[mode][keyCombo]
-        local allModifiersPressed = true
+    if event == "key" then
+        handleKeyPress(key, true, model, view)
+    elseif event == "key_up" then
+        handleKeyPress(key, false, model, view)
+    end
+end
 
-        for _, modifier in ipairs(mapping.modifiers) do
-            if not isModifierPressed(modifier) then
-                allModifiersPressed = false
-                break
-            end
+-- Event loop to manage key press and release events
+local function eventLoop(mode, model, view)
+    while not model.shouldExit do
+        local event, param1 = os.pullEvent()
+        
+        if event == "key" or event == "key_up" then
+            handleKeyEvent(mode, model, view)
+        elseif event == "char" then
+            handleCharEvent(mode, param1, model, view)
         end
 
-        if allModifiersPressed then
-            mapping.callback()
+        -- Update the view if needed
+        if model:updateScroll(view:getScreenHeight()) then
+            view:drawScreen(model, view:getScreenWidth(), view:getScreenHeight())
+        else
+            view:drawLine(model, model.cursorY - model.scrollOffset)
         end
-
-        -- Update status line for Ctrl or Alt presses
-        if isModifierPressed("ctrl") then
-            model.statusMessage = "Ctrl pressed!"
-        elseif isModifierPressed("alt") then
-            model.statusMessage = "Alt pressed!"
-        end
-        view:drawStatusBar(model, view:getScreenWidth(), view:getScreenHeight())
-    else
-        print("Unmapped key:", keyCombo, "in mode:", mode)  -- Debugging statement
+        view:updateCursor(model)
     end
 end
 
@@ -136,30 +140,6 @@ local function handleCommandInput(model, view)
                 return model.modes.handleNormalMode(model, view)  -- Exit command mode without executing
             end
         end
-    end
-end
-
--- Central event loop
-local function eventLoop(mode, model, view)
-    while not model.shouldExit do
-        if mode == "normal" then
-            local event, param1 = os.pullEvent("key")
-            handleKeyEvent(mode, param1, model, view)
-        else
-            local event, param1 = os.pullEvent()
-            if event == "key" then
-                handleKeyEvent(mode, param1, model, view)
-            elseif event == "char" then
-                handleCharEvent(mode, param1, model, view)
-            end
-        end
-
-        if model:updateScroll(view:getScreenHeight()) then
-            view:drawScreen(model, view:getScreenWidth(), view:getScreenHeight())
-        else
-            view:drawLine(model, model.cursorY - model.scrollOffset)
-        end
-        view:updateCursor(model)
     end
 end
 
@@ -507,7 +487,7 @@ local function handleNormalMode(model, view)
         local event, param1 = os.pullEvent("key")
         
         -- Handle the key event
-        handleKeyEvent("normal", param1, model, view)
+        handleKeyEvent("normal", model, view)
 
         -- Update the view based on cursor and scroll changes
         if model:updateScroll(view:getScreenHeight()) then
@@ -531,7 +511,7 @@ local function handleInsertMode(model, view)
             model:insertChar(param1)
             view:drawLine(model, model.cursorY - model.scrollOffset)
         elseif event == "key" then
-            handleKeyEvent("insert", param1, model, view)
+            handleKeyEvent("insert", model, view)
             if param1 == keys.backspace then
                 model:backspace()
                 view:drawLine(model, model.cursorY - model.scrollOffset)
@@ -554,7 +534,7 @@ local function handleVisualMode(model, view)
     print("Entered Visual Mode")  -- Debugging statement
     while true do
         local event, param1 = os.pullEvent("key")
-        handleKeyEvent("visual", param1, model, view)
+        handleKeyEvent("visual", model, view)
 
         if param1 == keys.v then
             model:endVisualMode()
