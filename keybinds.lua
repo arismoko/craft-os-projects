@@ -1,4 +1,4 @@
---- keybinds.lua
+-- keybinds.lua
 
 local function setupKeybinds(avim, Model, View, modes)
     -- Normal mode keybindings
@@ -145,13 +145,12 @@ local function setupKeybinds(avim, Model, View, modes)
     end)
 
     avim.keys.map("visual", "x", function()
-        Model:cutSelection()  -- Similar to 'd' but perhaps for single character cuts in visual mode
+        Model:cutSelection()
         View:drawScreen(Model, View:getScreenWidth(), View:getScreenHeight())
         modes.handleNormalMode(Model, View)
     end)
 
     avim.keys.map("visual", "o", function()
-        -- Toggle visual selection mode (could be a different behavior you want to implement)
         Model:endVisualMode()
         Model:startVisualMode()
     end)

@@ -5,7 +5,8 @@ local avim = { keys = {} }
 local KeyMap = {
     normal = {},
     insert = {},
-    visual = {}  -- Visual mode
+    visual = {},  -- Visual mode
+    command = {}  -- Command mode
 }
 
 -- Function to parse key combinations
@@ -83,6 +84,58 @@ local function handleCharEvent(mode, char, model, view)
         mapping.callback()
     else
         print("Unmapped char:", char, "in mode:", mode)  -- Debugging statement
+    end
+end
+
+-- Command mapping table
+local commands = {}
+
+-- Function to add a new command
+function commands.map(name, func)
+    commands[name] = func
+end
+
+-- Command execution function
+local function executeCommand(command, model, view)
+    local args = {}
+    for arg in command:gmatch("%S+") do
+        table.insert(args, arg)
+    end
+
+    local commandName = args[1]
+    table.remove(args, 1)  -- Remove the command name from the args
+
+    if commands[commandName] then
+        commands[commandName](model, view, unpack(args))
+    else
+        model.statusMessage = "Unknown command: " .. commandName
+    end
+end
+
+-- Handle command input
+local function handleCommandInput(model, view)
+    local command = ""
+    model.statusMessage = ":"  -- Start with a colon to indicate command mode
+    view:drawStatusBar(model, view:getScreenWidth(), view:getScreenHeight())
+
+    while true do
+        local event, param1 = os.pullEvent()
+        if event == "char" then
+            command = command .. param1
+            model.statusMessage = ":" .. command
+            view:drawStatusBar(model, view:getScreenWidth(), view:getScreenHeight())
+        elseif event == "key" then
+            if param1 == keys.enter then
+                executeCommand(command, model, view)
+                return model.modes.handleNormalMode(model, view)  -- Return to normal mode after executing the command
+            elseif param1 == keys.backspace then
+                command = command:sub(1, -2)  -- Remove the last character
+                model.statusMessage = ":" .. command
+                view:drawStatusBar(model, view:getScreenWidth(), view:getScreenHeight())
+            elseif param1 == keys.escape then
+                return model.modes.handleNormalMode(model, view)  -- Exit command mode without executing
+            end
+        end
     end
 end
 
@@ -542,6 +595,10 @@ setupKeybinds(avim, Model, View, {
     handleVisualMode = handleVisualMode
 })
 
+-- Load commands
+local setupCommands = require("commands")
+setupCommands(commands, Model, View)
+
 -- Store mode handlers in the Model for easy access
 Model.modes.handleNormalMode = handleNormalMode
 Model.modes.handleInsertMode = handleInsertMode
@@ -583,5 +640,6 @@ return {
     View = View,
     handleNormalMode = handleNormalMode,
     handleInsertMode = handleInsertMode,
-    handleVisualMode = handleVisualMode
+    handleVisualMode = handleVisualMode,
+    handleCommandMode = handleCommandInput  -- Expose the new command mode
 }
