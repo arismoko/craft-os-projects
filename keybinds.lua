@@ -51,10 +51,17 @@ KeyHandler:map("normal", "ctrl + r", function()
     View:drawScreen()
 end)
 
-KeyHandler:map("normal", "shift + ;", "switch:command")
-KeyHandler:map("normal", "i", "switch:insert")
-KeyHandler:map("normal", "v", "switch:visual")
-KeyHandler:map("normal", "escape", function()
+KeyHandler:map("normal", "shift + ;", function()
+    Model:switchMode("command")
+end)
+KeyHandler:map("normal", "i", function ()
+    Model:switchMode("insert")
+end)
+    
+KeyHandler:map("normal", "v", function()
+    Model:startVisualMode()
+end)
+KeyHandler:map("normal", "f9", function()
     Model.shouldExit = true
 end)
 
