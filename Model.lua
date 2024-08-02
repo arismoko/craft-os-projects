@@ -3,7 +3,8 @@ Model = {}
 Model.__index = Model
 
 local instance
-local view = require("View"):getInstance()
+local cachedView -- This will hold the cached View instance
+
 function Model:new()
     if not instance then
         instance = {
@@ -35,34 +36,36 @@ function Model:getInstance()
     return instance
 end
 
+-- Lazy loading and caching of the View instance
+local function getView()
+    if not cachedView then
+        cachedView = require("View"):getInstance()
+    end
+    return cachedView
+end
+
 function Model:updateStatusBar(message)
+    local view = getView() -- Get the cached or lazily loaded View instance
     self.statusMessage = message
     self.statusColor = colors.green -- Reset to default color
     view:drawStatusBar(view:getScreenWidth(), view:getScreenHeight())
 end
 
 function Model:updateStatusError(message)
+    local view = getView() -- Get the cached or lazily loaded View instance
     self.statusMessage = message
     self.statusColor = colors.red -- Set color to red for errors
     view:drawStatusBar(view:getScreenWidth(), view:getScreenHeight())
 end
 
-function Model:clearStatusBar(view)
+function Model:clearStatusBar()
+    local view = getView() -- Get the cached or lazily loaded View instance
     self.statusMessage = ""
     self.statusColor = colors.green -- Reset to default color
     view:drawStatusBar(view:getScreenWidth(), view:getScreenHeight())
 end
 
-function Model:saveToHistory()
-    table.insert(self.history, {
-        buffer = table.deepCopy(self.buffer),
-        cursorX = self.cursorX,
-        cursorY = self.cursorY
-    })
-    self.redoStack = {}
-end
-
-function Model:undo(view)
+function Model:undo()
     if #self.history > 0 then
         local lastState = table.remove(self.history)
         table.insert(self.redoStack, {
@@ -79,7 +82,7 @@ function Model:undo(view)
     end
 end
 
-function Model:redo(view)
+function Model:redo()
     if #self.redoStack > 0 then
         local redoState = table.remove(self.redoStack)
         table.insert(self.history, {
@@ -96,14 +99,14 @@ function Model:redo(view)
     end
 end
 
-function Model:startVisualMode(view)
+function Model:startVisualMode()
     self.visualStartX = self.cursorX
     self.visualStartY = self.cursorY
     self.isVisualMode = true
     self:updateStatusBar("Entered visual mode")
 end
 
-function Model:endVisualMode(view)
+function Model:endVisualMode()
     self.visualStartX = nil
     self.visualStartY = nil
     self.isVisualMode = false
@@ -126,7 +129,7 @@ function Model:loadFile(name)
     end
 end
 
-function Model:saveFile(view)
+function Model:saveFile()
     local file = fs.open(self.filename, "w")
     for _, line in ipairs(self.buffer) do
         file.writeLine(line)
@@ -158,7 +161,7 @@ function Model:insertChar(char)
     self:updateStatusBar("Inserted character")
 end
 
-function Model:backspace(view)
+function Model:backspace()
     if self.cursorX > 1 then
         self:saveToHistory()
         local line = self.buffer[self.cursorY]
@@ -177,7 +180,7 @@ function Model:backspace(view)
     end
 end
 
-function Model:enter(view)
+function Model:enter()
     self:saveToHistory()
     local line = self.buffer[self.cursorY]
     local newLine = line:sub(self.cursorX)
@@ -188,12 +191,12 @@ function Model:enter(view)
     self:updateStatusBar("Inserted new line")
 end
 
-function Model:yankLine(view)
+function Model:yankLine()
     self.yankRegister = self.buffer[self.cursorY]
     self:updateStatusBar("Yanked line")
 end
 
-function Model:paste(view)
+function Model:paste()
     self:saveToHistory()
     local line = self.buffer[self.cursorY]
     self.buffer[self.cursorY] = line:sub(1, self.cursorX - 1) .. self.yankRegister .. line:sub(self.cursorX)
@@ -201,7 +204,7 @@ function Model:paste(view)
     self:updateStatusBar("Pasted text")
 end
 
-function Model:yankSelection(view)
+function Model:yankSelection()
     local startX, startY = math.min(self.cursorX, self.visualStartX), math.min(self.cursorY, self.visualStartY)
     local endX, endY = math.max(self.cursorX, self.visualStartX), math.max(self.cursorY, self.visualStartY)
 
@@ -224,7 +227,7 @@ function Model:yankSelection(view)
     self:updateStatusBar("Yanked selection")
 end
 
-function Model:cutSelection(view)
+function Model:cutSelection()
     self:saveToHistory()
     local startX, startY = math.min(self.cursorX, self.visualStartX), math.min(self.cursorY, self.visualStartY)
     local endX, endY = math.max(self.cursorX, self.visualStartX), math.max(self.cursorY, self.visualStartY)
@@ -261,7 +264,7 @@ function Model:cutSelection(view)
     self:updateStatusBar("Cut selection")
 end
 
-function Model:cutLine(view)
+function Model:cutLine()
     self:saveToHistory()
     self.yankRegister = self.buffer[self.cursorY]
     table.remove(self.buffer, self.cursorY)
