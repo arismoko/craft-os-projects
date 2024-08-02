@@ -275,4 +275,13 @@ function Model:cutLine()
     self:updateStatusBar("Cut line")
 end
 
+function Model:switchMode(mode)
+    self.mode = mode
+    self:updateStatusBar("Switched to " .. mode .. " mode")
+    if mode == "command" then
+        local commandHandler = require("CommandHandler"):getInstance()
+        commandHandler:handleCommandInput(self, getView())
+    end
+end
+
 return Model

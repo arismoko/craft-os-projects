@@ -42,8 +42,6 @@ end
 
 function CommandHandler:handleCommandInput(model, view)
     local command = ""
-    model:updateStatusBar(":", view)
-
     while true do
         local event, param1 = os.pullEvent()
         if event == "char" then
