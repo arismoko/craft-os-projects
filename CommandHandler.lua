@@ -51,7 +51,7 @@ function CommandHandler:handleCommandInput(model, view)
             if param1 == keys.enter then
                 self:execute(command, model, view)
                 model:switchMode("normal")
-                return
+                break
             elseif param1 == keys.backspace then
                 command = command:sub(1, -2)
                 model:updateStatusBar(":" .. command, view)
