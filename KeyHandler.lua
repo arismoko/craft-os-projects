@@ -95,3 +95,5 @@ function KeyHandler:handleKeyEvent(mode, model, view)
         self:handleKeyPress(key, false, model, view)
     end
 end
+
+return KeyHandler
