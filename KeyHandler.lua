@@ -113,8 +113,6 @@ function KeyHandler:handleKeyPress(key, isDown, model, view, commandHandler)
                 end
             end
         end
-    else
-        model:updateStatusBar("Unmapped key: " .. keys.getName(key) .. " in mode: " .. model.mode)
     end
 end
 
