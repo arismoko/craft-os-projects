@@ -1,5 +1,4 @@
--- View.lua
-local Model = require("Model"):getInstance() -- Import the Model singleton
+local Model = require("Model"):getInstance() -- Cache the Model singleton instance
 
 View = {}
 View.__index = View
@@ -35,7 +34,6 @@ end
 function View:getScreenHeight()
     return self.screenHeight
 end
-
 
 function View:createWindow(x, y, width, height, backgroundColor, textColor)
     -- Set default dimensions if none are provided
@@ -149,8 +147,6 @@ function View:createWindow(x, y, width, height, backgroundColor, textColor)
     return window
 end
 
-
-
 -- Function to close all windows
 function View:closeAllWindows()
     for _, window in ipairs(self.windows) do
@@ -167,13 +163,12 @@ function View:drawScreen()
         self.activeWindow:show()
         return
     else
-        local model = Model -- Use the singleton Model instance directly
         term.clear()
         for i = 1, self.screenHeight - 1 do
             self:drawLine(i)
         end
         self:drawStatusBar()
-        term.setCursorPos(model.cursorX, model.cursorY - model.scrollOffset)
+        term.setCursorPos(Model.cursorX, Model.cursorY - Model.scrollOffset)
         term.setCursorBlink(true)
     end
 end
@@ -186,22 +181,21 @@ function View:drawLine(y)
         return -- Skip drawing if a window is active
     end
 
-    local model = Model -- Use the singleton Model instance directly
-    local lineIndex = model.scrollOffset + y
+    local lineIndex = Model.scrollOffset + y
     term.setCursorPos(1, y)
     term.clearLine()
 
-    if model.buffer[lineIndex] then
-        if model.isVisualMode and model.visualStartY and lineIndex >= math.min(model.visualStartY, model.cursorY) and lineIndex <= math.max(model.visualStartY, model.cursorY) then
+    if Model.buffer[lineIndex] then
+        if Model.isVisualMode and Model.visualStartY and lineIndex >= math.min(Model.visualStartY, Model.cursorY) and lineIndex <= math.max(Model.visualStartY, Model.cursorY) then
             -- Highlight the selected text
             local startX = 1
-            local endX = #model.buffer[lineIndex]
-            if lineIndex == model.visualStartY then startX = model.visualStartX end
-            if lineIndex == model.cursorY then endX = model.cursorX end
+            local endX = #Model.buffer[lineIndex]
+            if lineIndex == Model.visualStartY then startX = Model.visualStartX end
+            if lineIndex == Model.cursorY then endX = Model.cursorX end
 
-            local beforeHighlight = model.buffer[lineIndex]:sub(1, startX - 1)
-            local highlightText = model.buffer[lineIndex]:sub(startX, endX)
-            local afterHighlight = model.buffer[lineIndex]:sub(endX + 1)
+            local beforeHighlight = Model.buffer[lineIndex]:sub(1, startX - 1)
+            local highlightText = Model.buffer[lineIndex]:sub(startX, endX)
+            local afterHighlight = Model.buffer[lineIndex]:sub(endX + 1)
 
             term.write(beforeHighlight)
             term.setBackgroundColor(colors.gray)
@@ -210,22 +204,21 @@ function View:drawLine(y)
             term.write(afterHighlight)
         else
             -- Draw normally without any highlight if not in visual mode
-            term.write(model.buffer[lineIndex])
+            term.write(Model.buffer[lineIndex])
         end
     end
 end
 
 function View:drawStatusBar()
-    local model = Model -- Use the singleton Model instance directly
     term.setCursorPos(1, self.screenHeight)
-    term.setBackgroundColor(model.statusColor)
+    term.setBackgroundColor(Model.statusColor)
     term.clearLine()
     term.setTextColor(colors.white)
-    term.write("File: " .. model.filename .. " | Pos: " .. model.cursorY .. "," .. model.cursorX)
+    term.write("File: " .. Model.filename .. " | Pos: " .. Model.cursorY .. "," .. Model.cursorX)
 
-    if model.statusMessage ~= "" then
-        term.setCursorPos(self.screenWidth - #model.statusMessage - 1, self.screenHeight)
-        term.write(model.statusMessage)
+    if Model.statusMessage ~= "" then
+        term.setCursorPos(self.screenWidth - #Model.statusMessage - 1, self.screenHeight)
+        term.write(Model.statusMessage)
     end
 
     term.setBackgroundColor(colors.black)
@@ -233,8 +226,7 @@ function View:drawStatusBar()
 end
 
 function View:updateCursor()
-    local model = Model -- Use the singleton Model instance directly
-    term.setCursorPos(model.cursorX, model.cursorY - model.scrollOffset)
+    term.setCursorPos(Model.cursorX, Model.cursorY - Model.scrollOffset)
 end
 
 return View
