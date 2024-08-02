@@ -12,17 +12,14 @@ local view = View:new(screenWidth, screenHeight)
 local keyHandler = KeyHandler:new()
 local commandHandler = CommandHandler:new()
 
--- Load keybindings and commands (these would be in separate files)
+-- Load keybindings
 local setupKeybinds = require("keybinds")
-setupKeybinds(keyHandler, model, view)
-
-local setupCommands = require("commands")
-setupCommands(commandHandler, model, view)
+setupKeybinds(keyHandler, model, view, commandHandler)
 
 -- Main event loop
 local function eventLoop()
     while not model.shouldExit do
-        keyHandler:handleKeyEvent(model.mode, model, view)
+        keyHandler:handleKeyEvent(model.mode, model, view, commandHandler)
 
         if model:updateScroll(view:getScreenHeight()) then
             view:drawScreen(model)

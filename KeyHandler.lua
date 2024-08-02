@@ -60,7 +60,7 @@ function KeyHandler:map(mode, keyCombo, callback)
     print("Mapped key:", comboKey, "to mode:", mode)
 end
 
-function KeyHandler:handleKeyPress(key, isDown, model, view)
+function KeyHandler:handleKeyPress(key, isDown, model, view, commandHandler)
     if self.modifierKeys[key] then
         self.keyStates[self.modifierKeys[key]] = isDown
         print("Modifier key:", keys.getName(key), "is now", isDown and "down" or "up")
@@ -76,18 +76,25 @@ function KeyHandler:handleKeyPress(key, isDown, model, view)
             local action = self.keyMap[model.mode][comboKey]
             if type(action) == "function" then
                 action()
-            elseif type(action) == "string" and action:match("^switch:") then
-                local newMode = action:match("^switch:(.+)")
-                model.mode = newMode
-                model.statusMessage = "Switched to " .. newMode .. " mode"
-                view:drawStatusBar(model, view:getScreenWidth(), view:getScreenHeight())
-                print("Switched to " .. newMode .. " mode")
+            elseif type(action) == "string" then
+                if action:match("^switch:") then
+                    local newMode = action:match("^switch:(.+)")
+                    if newMode == "command" then
+                        commandHandler:handleCommandInput(model, view)
+                    else
+                        model.mode = newMode
+                        model.statusMessage = "Switched to " .. newMode .. " mode"
+                        view:drawStatusBar(model, view:getScreenWidth(), view:getScreenHeight())
+                        print("Switched to " .. newMode .. " mode")
+                    end
+                end
             else
                 print("Unmapped key:", comboKey, "in mode:", model.mode)
             end
         end
     end
 end
+
 
 function KeyHandler:handleKeyEvent(mode, model, view)
     local event, key = os.pullEvent()

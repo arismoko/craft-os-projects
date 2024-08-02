@@ -1,6 +1,6 @@
 -- keybinds.lua
 
-local function setupKeybinds(keyHandler, Model, View)
+local function setupKeybinds(keyHandler, Model, View, commandHandler)
     -- Normal mode keybindings
     keyHandler:map("normal", "h", function()
         Model.cursorX = math.max(1, Model.cursorX - 1)
@@ -50,6 +50,7 @@ local function setupKeybinds(keyHandler, Model, View)
         View:drawScreen(Model, View:getScreenWidth(), View:getScreenHeight())
     end)
 
+    keyHandler:map("normal", ":", "switch:command") 
     keyHandler:map("normal", "i", "switch:insert")
     keyHandler:map("normal", "v", "switch:visual")
     keyHandler:map("normal", "escape", function()
