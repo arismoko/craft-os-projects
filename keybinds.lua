@@ -101,7 +101,7 @@ KeyHandler:map("visual", "escape", "switch:normal")
 KeyHandler:map("insert", "escape", "switch:normal")
 
 -- Debug related keybindings for testing
-KeyHandler:map("normal", "F1", function()
+KeyHandler:map("normal", keys.f1, function()
     -- Create a new window
     local keybindsWindow = View:createWindow(5, 5, 50, 15)
     
@@ -117,7 +117,7 @@ KeyHandler:map("normal", "F1", function()
     keybindsWindow:show()
 end)
 
-KeyHandler:map("normal", "F2", function()
+KeyHandler:map("normal", keys.f1, function()
     View:closeAllWindows()
 end)
 
