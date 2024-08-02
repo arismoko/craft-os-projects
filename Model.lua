@@ -1,4 +1,3 @@
--- Model.lua
 Model = {}
 Model.__index = Model
 
@@ -17,10 +16,29 @@ function Model:new()
         redoStack = {},
         statusMessage = "",
         shouldExit = false,
-        mode = "normal"
+        mode = "normal",
+        statusColor = colors.green -- Default status bar color
     }
     setmetatable(instance, Model)
     return instance
+end
+
+function Model:updateStatusBar(message, view)
+    self.statusMessage = message
+    self.statusColor = colors.green -- Reset to default color
+    view:drawStatusBar(self, view:getScreenWidth(), view:getScreenHeight())
+end
+
+function Model:updateStatusError(message, view)
+    self.statusMessage = message
+    self.statusColor = colors.red -- Set color to red for errors
+    view:drawStatusBar(self, view:getScreenWidth(), view:getScreenHeight())
+end
+
+function Model:clearStatusBar(view)
+    self.statusMessage = ""
+    self.statusColor = colors.green -- Reset to default color
+    view:drawStatusBar(self, view:getScreenWidth(), view:getScreenHeight())
 end
 
 function Model:saveToHistory()
@@ -32,7 +50,7 @@ function Model:saveToHistory()
     self.redoStack = {}
 end
 
-function Model:undo()
+function Model:undo(view)
     if #self.history > 0 then
         local lastState = table.remove(self.history)
         table.insert(self.redoStack, {
@@ -43,13 +61,13 @@ function Model:undo()
         self.buffer = lastState.buffer
         self.cursorX = lastState.cursorX
         self.cursorY = lastState.cursorY
-        self.statusMessage = "Undid last action"
+        self:updateStatusBar("Undid last action", view)
     else
-        self.statusMessage = "Nothing to undo"
+        self:updateStatusError("Nothing to undo", view)
     end
 end
 
-function Model:redo()
+function Model:redo(view)
     if #self.redoStack > 0 then
         local redoState = table.remove(self.redoStack)
         table.insert(self.history, {
@@ -60,27 +78,27 @@ function Model:redo()
         self.buffer = redoState.buffer
         self.cursorX = redoState.cursorX
         self.cursorY = redoState.cursorY
-        self.statusMessage = "Redid last action"
+        self:updateStatusBar("Redid last action", view)
     else
-        self.statusMessage = "Nothing to redo"
+        self:updateStatusError("Nothing to redo", view)
     end
 end
 
-function Model:startVisualMode()
+function Model:startVisualMode(view)
     self.visualStartX = self.cursorX
     self.visualStartY = self.cursorY
     self.isVisualMode = true
-    self.statusMessage = "Entered visual mode"
+    self:updateStatusBar("Entered visual mode", view)
 end
 
-function Model:endVisualMode()
+function Model:endVisualMode(view)
     self.visualStartX = nil
     self.visualStartY = nil
     self.isVisualMode = false
-    self.statusMessage = "Exited visual mode"
+    self:updateStatusBar("Exited visual mode", view)
 end
 
-function Model:loadFile(name)
+function Model:loadFile(name, view)
     self.filename = name
     self.buffer = {}
     if fs.exists(self.filename) then
@@ -89,19 +107,20 @@ function Model:loadFile(name)
             table.insert(self.buffer, line)
         end
         file.close()
+        self:updateStatusBar("Loaded file: " .. self.filename, view)
     else
         table.insert(self.buffer, "")
+        self:updateStatusError("File not found, created new file: " .. self.filename, view)
     end
-    self.statusMessage = "Loaded file: " .. self.filename
 end
 
-function Model:saveFile()
+function Model:saveFile(view)
     local file = fs.open(self.filename, "w")
     for _, line in ipairs(self.buffer) do
         file.writeLine(line)
     end
     file.close()
-    self.statusMessage = "File saved: " .. self.filename
+    self:updateStatusBar("File saved: " .. self.filename, view)
 end
 
 function Model:updateScroll(screenHeight)
@@ -119,32 +138,34 @@ function Model:updateScroll(screenHeight)
     return false
 end
 
-function Model:insertChar(char)
+function Model:insertChar(char, view)
     self:saveToHistory()
     local line = self.buffer[self.cursorY]
     self.buffer[self.cursorY] = line:sub(1, self.cursorX - 1) .. char .. line:sub(self.cursorX)
     self.cursorX = self.cursorX + 1
-    self.statusMessage = "Inserted character"
+    self:updateStatusBar("Inserted character", view)
 end
 
-function Model:backspace()
+function Model:backspace(view)
     if self.cursorX > 1 then
         self:saveToHistory()
         local line = self.buffer[self.cursorY]
         self.buffer[self.cursorY] = line:sub(1, self.cursorX - 2) .. line:sub(self.cursorX)
         self.cursorX = self.cursorX - 1
-        self.statusMessage = "Deleted character"
+        self:updateStatusBar("Deleted character", view)
     elseif self.cursorY > 1 then
         self:saveToHistory()
         local line = table.remove(self.buffer, self.cursorY)
         self.cursorY = self.cursorY - 1
         self.cursorX = #self.buffer[self.cursorY] + 1
         self.buffer[self.cursorY] = self.buffer[self.cursorY] .. line
-        self.statusMessage = "Deleted line"
+        self:updateStatusBar("Deleted line", view)
+    else
+        self:updateStatusError("Nothing to delete", view)
     end
 end
 
-function Model:enter()
+function Model:enter(view)
     self:saveToHistory()
     local line = self.buffer[self.cursorY]
     local newLine = line:sub(self.cursorX)
@@ -152,23 +173,23 @@ function Model:enter()
     table.insert(self.buffer, self.cursorY + 1, newLine)
     self.cursorY = self.cursorY + 1
     self.cursorX = 1
-    self.statusMessage = "Inserted new line"
+    self:updateStatusBar("Inserted new line", view)
 end
 
-function Model:yankLine()
+function Model:yankLine(view)
     self.yankRegister = self.buffer[self.cursorY]
-    self.statusMessage = "Yanked line"
+    self:updateStatusBar("Yanked line", view)
 end
 
-function Model:paste()
+function Model:paste(view)
     self:saveToHistory()
     local line = self.buffer[self.cursorY]
     self.buffer[self.cursorY] = line:sub(1, self.cursorX - 1) .. self.yankRegister .. line:sub(self.cursorX)
     self.cursorX = self.cursorX + #self.yankRegister
-    self.statusMessage = "Pasted text"
+    self:updateStatusBar("Pasted text", view)
 end
 
-function Model:yankSelection()
+function Model:yankSelection(view)
     local startX, startY = math.min(self.cursorX, self.visualStartX), math.min(self.cursorY, self.visualStartY)
     local endX, endY = math.max(self.cursorX, self.visualStartX), math.max(self.cursorY, self.visualStartY)
 
@@ -188,10 +209,10 @@ function Model:yankSelection()
         end
         self.yankRegister = self.yankRegister .. yankText .. "\n"
     end
-    self.statusMessage = "Yanked selection"
+    self:updateStatusBar("Yanked selection", view)
 end
 
-function Model:cutSelection()
+function Model:cutSelection(view)
     self:saveToHistory()
     local startX, startY = math.min(self.cursorX, self.visualStartX), math.min(self.cursorY, self.visualStartY)
     local endX, endY = math.max(self.cursorX, self.visualStartX), math.max(self.cursorY, self.visualStartY)
@@ -225,10 +246,10 @@ function Model:cutSelection()
         table.remove(self.buffer, startY + 1)
     end
 
-    self.statusMessage = "Cut selection"
+    self:updateStatusBar("Cut selection", view)
 end
 
-function Model:cutLine()
+function Model:cutLine(view)
     self:saveToHistory()
     self.yankRegister = self.buffer[self.cursorY]
     table.remove(self.buffer, self.cursorY)
@@ -236,7 +257,7 @@ function Model:cutLine()
         self.cursorY = #self.buffer
     end
     self.cursorX = 1
-    self.statusMessage = "Cut line"
+    self:updateStatusBar("Cut line", view)
 end
 
 return Model

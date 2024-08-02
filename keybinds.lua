@@ -31,7 +31,7 @@ local function setupKeybinds(keyHandler, Model, View, commandHandler)
     keyHandler:map("normal", "p", function()
         Model:paste()
         View:drawLine(Model, Model.cursorY - Model.scrollOffset)
-        Model.statusMessage = "Pasted text"
+        Model:updateStatusBar("Pasted text", View)
         View:drawStatusBar(Model, View:getScreenWidth(), View:getScreenHeight())
     end)
 

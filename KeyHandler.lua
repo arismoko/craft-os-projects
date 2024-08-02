@@ -63,7 +63,7 @@ end
 function KeyHandler:handleKeyPress(key, isDown, model, view, commandHandler)
     if self.modifierKeys[key] then
         self.keyStates[self.modifierKeys[key]] = isDown
-        print("Modifier key:", keys.getName(key), "is now", isDown and "down" or "up")
+        model:updateStatusBar("Modifier key:", keys.getName(key), "is now", isDown and "down" or "up")
     else
         local combo = {}
         if self.keyStates["ctrl"] then table.insert(combo, "ctrl") end
@@ -85,11 +85,11 @@ function KeyHandler:handleKeyPress(key, isDown, model, view, commandHandler)
                         model.mode = newMode
                         model.statusMessage = "Switched to " .. newMode .. " mode"
                         view:drawStatusBar(model, view:getScreenWidth(), view:getScreenHeight())
-                        print("Switched to " .. newMode .. " mode")
+                        model:updateStatusBar("Switched to " .. newMode .. " mode")
                     end
                 end
             else
-                print("Unmapped key:", comboKey, "in mode:", model.mode)
+                model:updateStatusBar("Unmapped key:", comboKey, "in mode:", model.mode)
             end
         end
     end

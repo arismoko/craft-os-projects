@@ -58,7 +58,7 @@ end
 
 function View:drawStatusBar(model)
     term.setCursorPos(1, self.screenHeight)
-    term.setBackgroundColor(colors.green)
+    term.setBackgroundColor(model.statusColor)
     term.clearLine()
     term.setTextColor(colors.white)
     term.write("File: " .. model.filename .. " | Pos: " .. model.cursorY .. "," .. model.cursorX)

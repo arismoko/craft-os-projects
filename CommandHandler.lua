@@ -1,4 +1,3 @@
--- CommandHandler.lua
 CommandHandler = {}
 CommandHandler.__index = CommandHandler
 
@@ -26,29 +25,26 @@ function CommandHandler:execute(command, model, view)
     if self.commands[commandName] then
         self.commands[commandName](model, view, unpack(args))
     else
-        model.statusMessage = "Unknown command: " .. commandName
+        model:updateStatusError("Unknown command: " .. commandName, view)
     end
 end
 
 function CommandHandler:handleCommandInput(model, view)
     local command = ""
-    model.statusMessage = ":"
-    view:drawStatusBar(model)
+    model:updateStatusBar(":", view)
 
     while true do
         local event, param1 = os.pullEvent()
         if event == "char" then
             command = command .. param1
-            model.statusMessage = ":" .. command
-            view:drawStatusBar(model)
+            model:updateStatusBar(":" .. command, view)
         elseif event == "key" then
             if param1 == keys.enter then
                 self:execute(command, model, view)
                 return
             elseif param1 == keys.backspace then
                 command = command:sub(1, -2)
-                model.statusMessage = ":" .. command
-                view:drawStatusBar(model)
+                model:updateStatusBar(":" .. command, view)
             elseif param1 == keys.escape then
                 return
             end
