@@ -1,4 +1,6 @@
 -- View.lua
+local Model = require("Model"):getInstance() -- Import the Model singleton
+
 View = {}
 View.__index = View
 
@@ -31,17 +33,19 @@ function View:getScreenHeight()
     return self.screenHeight
 end
 
-function View:drawScreen(model)
+function View:drawScreen()
+    local model = Model -- Use the singleton Model instance directly
     term.clear()
     for i = 1, self.screenHeight - 1 do
-        self:drawLine(model, i)
+        self:drawLine(i)
     end
-    self:drawStatusBar(model)
+    self:drawStatusBar()
     term.setCursorPos(model.cursorX, model.cursorY - model.scrollOffset)
     term.setCursorBlink(true)
 end
 
-function View:drawLine(model, y)
+function View:drawLine(y)
+    local model = Model -- Use the singleton Model instance directly
     local lineIndex = model.scrollOffset + y
     term.setCursorPos(1, y)
     term.clearLine()
@@ -68,7 +72,8 @@ function View:drawLine(model, y)
     end
 end
 
-function View:drawStatusBar(model)
+function View:drawStatusBar()
+    local model = Model -- Use the singleton Model instance directly
     term.setCursorPos(1, self.screenHeight)
     term.setBackgroundColor(model.statusColor)
     term.clearLine()
@@ -84,7 +89,8 @@ function View:drawStatusBar(model)
     term.setTextColor(colors.white)
 end
 
-function View:updateCursor(model)
+function View:updateCursor()
+    local model = Model -- Use the singleton Model instance directly
     term.setCursorPos(model.cursorX, model.cursorY - model.scrollOffset)
 end
 
