@@ -70,6 +70,8 @@ function View:createWindow(x, y, width, height, backgroundColor, textColor)
 
     -- Function to close the window (restores the main buffer)
     function window:close()
+        term.clear()
+        View:getInstance():drawScreen()
         View:getInstance().activeWindow = nil -- Clear the active window
     end
 
