@@ -283,5 +283,31 @@ function Model:switchMode(mode)
         commandHandler:handleCommandInput(self, getView())
     end
 end
+function Model:saveToHistory()
+    -- Deep copy the current state of the buffer, cursor positions, etc.
+    table.insert(self.history, {
+        buffer = table.deepCopy(self.buffer),
+        cursorX = self.cursorX,
+        cursorY = self.cursorY
+    })
+    -- Clear the redo stack since new history invalidates future redo actions
+    self.redoStack = {}
+end
+
+function table.deepCopy(orig)
+    local orig_type = type(orig)
+    local copy
+    if orig_type == 'table' then
+        copy = {}
+        for orig_key, orig_value in next, orig, nil do
+            copy[table.deepCopy(orig_key)] = table.deepCopy(orig_value)
+        end
+        setmetatable(copy, table.deepCopy(getmetatable(orig)))
+    else -- number, string, boolean, etc
+        copy = orig
+    end
+    return copy
+end
+
 
 return Model
