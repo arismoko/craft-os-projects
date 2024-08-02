@@ -38,19 +38,19 @@ end
 function Model:updateStatusBar(message)
     self.statusMessage = message
     self.statusColor = colors.green -- Reset to default color
-    view:drawStatusBar(self:getScreenWidth(), view:getScreenHeight())
+    view:drawStatusBar(view:getScreenWidth(), view:getScreenHeight())
 end
 
 function Model:updateStatusError(message)
     self.statusMessage = message
     self.statusColor = colors.red -- Set color to red for errors
-    view:drawStatusBar(self:getScreenWidth(), view:getScreenHeight())
+    view:drawStatusBar(view:getScreenWidth(), view:getScreenHeight())
 end
 
 function Model:clearStatusBar(view)
     self.statusMessage = ""
     self.statusColor = colors.green -- Reset to default color
-    view:drawStatusBar(self:getScreenWidth(), view:getScreenHeight())
+    view:drawStatusBar(view:getScreenWidth(), view:getScreenHeight())
 end
 
 function Model:saveToHistory()
