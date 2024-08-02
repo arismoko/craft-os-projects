@@ -3,14 +3,15 @@ local View = require("View"):getInstance()
 local Model = require("Model"):getInstance()
 local KeyHandler = require("KeyHandler"):getInstance()
 local CommandHandler = require("CommandHandler"):getInstance()
-
 local screenWidth, screenHeight = term.getSize()
 
 -- Initialize the View singleton with screen dimensions
 View:new(screenWidth, screenHeight)
 
 -- Load keybindings
-
+require("keybinds")
+-- Load commands
+require("commands")
 -- Main event loop
 local function eventLoop()
     while not Model.shouldExit do
