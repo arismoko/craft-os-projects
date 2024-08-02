@@ -112,7 +112,7 @@ KeyHandler:map("normal", keys.f1, function()
             keybindsWindow:print("  " .. key)
         end
     end
-    
+    Model:updateStatusBar("Opened keybinds window")
     -- Show the window
     keybindsWindow:show()
 end)
