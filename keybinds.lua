@@ -117,7 +117,7 @@ KeyHandler:map("normal", keys.f1, function()
     keybindsWindow:show()
 end)
 
-KeyHandler:map("normal", keys.f1, function()
+KeyHandler:map("normal", keys.f4, function()
     View:closeAllWindows()
 end)
 
