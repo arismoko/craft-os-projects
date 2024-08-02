@@ -11,6 +11,7 @@ function KeyHandler:new()
                 ctrl = false,
                 alt = false
             },
+            currentModifierHeld = "",
             modifierKeys = {
                 [keys.leftShift] = "shift",
                 [keys.rightShift] = "shift",
@@ -81,8 +82,10 @@ function KeyHandler:handleKeyPress(key, isDown, model, view, commandHandler)
         self.keyStates[modifier] = isDown
 
         if isDown then
+            self.currentModifierHeld = modifier
             model:updateStatusBar(modifier:sub(1,1):upper() .. modifier:sub(2) .. " held, waiting for inputs")
         else
+            self.currentModifierHeld = ""
             model:updateStatusBar(modifier:sub(1,1):upper() .. modifier:sub(2) .. " released with no subkey found")
         end
 
@@ -91,9 +94,9 @@ function KeyHandler:handleKeyPress(key, isDown, model, view, commandHandler)
 
     local currentMap = self.keyMap[model.mode]
     
-    if self.keyStates["ctrl"] then currentMap = currentMap.ctrl or {} end
-    if self.keyStates["shift"] then currentMap = currentMap.shift or {} end
-    if self.keyStates["alt"] then currentMap = currentMap.alt or {} end
+    if self.currentModifierHeld ~= "" then
+        currentMap = currentMap[self.currentModifierHeld] or {}
+    end
 
     local action = currentMap[keys.getName(key)]
     if isDown and action then
