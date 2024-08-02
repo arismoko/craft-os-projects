@@ -1,6 +1,6 @@
 -- main.lua
-local Model = require("Model"):getInstance()
 local View = require("View"):getInstance()
+local Model = require("Model"):getInstance()
 local KeyHandler = require("KeyHandler"):getInstance()
 local CommandHandler = require("CommandHandler"):getInstance()
 
