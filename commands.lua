@@ -2,18 +2,18 @@
 
 local function setupCommands(commands, Model, View)
     -- Quit command
-    commands.map("q", function(model, view)
+    commands:map("q", function(model, view)
         model.shouldExit = true
         model.statusMessage = "Exited AVIM"
     end)
 
     -- Save command
-    commands.map("w", function(model, view)
+    commands:map("w", function(model, view)
         model:saveFile()
     end)
 
     -- Find command
-    commands.map("find", function(model, view, pattern)
+    commands:map("find", function(model, view, pattern)
         if not pattern then
             model.statusMessage = "No pattern provided for find"
             return
@@ -33,7 +33,7 @@ local function setupCommands(commands, Model, View)
     end)
 
     -- Replace command
-    commands.map("replace", function(model, view, oldPattern, newPattern)
+    commands:map("replace", function(model, view, oldPattern, newPattern)
         if not oldPattern or not newPattern then
             model.statusMessage = "Usage: :replace <old> <new>"
             return
@@ -52,7 +52,7 @@ local function setupCommands(commands, Model, View)
     end)
 
     -- Delete line command
-    commands.map("delete", function(model, view, lineNumber)
+    commands:map("delete", function(model, view, lineNumber)
         lineNumber = tonumber(lineNumber)
         if not lineNumber or lineNumber < 1 or lineNumber > #model.buffer then
             model.statusMessage = "Invalid line number: " .. (lineNumber or "")
@@ -67,7 +67,7 @@ local function setupCommands(commands, Model, View)
     end)
 
     -- Go to line command
-    commands.map("goto", function(model, view, lineNumber)
+    commands:map("goto", function(model, view, lineNumber)
         lineNumber = tonumber(lineNumber)
         if not lineNumber or lineNumber < 1 or lineNumber > #model.buffer then
             model.statusMessage = "Invalid line number: " .. (lineNumber or "")
