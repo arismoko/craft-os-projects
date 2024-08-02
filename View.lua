@@ -37,7 +37,6 @@ function View:drawScreen()
     local model = Model -- Use the singleton Model instance directly
     term.clear()
     for i = 1, self.screenHeight - 1 do
-        print("Loop iteration:", i, "Type of i:", type(i)) -- Debug print
         self:drawLine(i)
     end
     self:drawStatusBar()
@@ -47,7 +46,6 @@ end
 
 
 function View:drawLine(y)
-    print("drawLine called with y =", y, "of type", type(y)) -- Debug print
     if type(y) ~= "number" then
         error("Invalid argument: 'y' should be a number, but received a " .. type(y))
     end
