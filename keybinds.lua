@@ -274,13 +274,12 @@ KeyHandler:map("normal", "shift + semicolon", function()
     Model:switchMode("command")
 end)
 
+KeyHandler:map("normal", "q", function()
+    Model:switchMode("command")
+end)
 
 KeyHandler:map("normal", "v", function()
-    if model.isVisualMode then
-        Model:endVisualMode()
-    else
         Model:startVisualMode()
-    end
 end)
 
 KeyHandler:map("normal", "f9", function()
@@ -336,6 +335,8 @@ KeyHandler:map("visual", "l", function()
     View:drawScreen()
 end)
 
+
+
 -- Editing
 KeyHandler:map("visual", "y", function()
     Model:yankSelection()
@@ -353,7 +354,9 @@ end)
 KeyHandler:map("visual", "f1", function()
     Model:endVisualMode()
 end)
-
+KeyHandler:map("visual", "v", function()
+    Model:endVisualMode()
+end)
 -- === Insert Mode Keybindings ===
 
 -- Mode Switching

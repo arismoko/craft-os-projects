@@ -17,6 +17,7 @@ function Model:new()
             visualStartX = nil,
             visualStartY = nil,
             isVisualMode = false,
+            InputMode = "keys", -- Used to decide whether to handle key events or char events: keys or chars
             history = {},
             redoStack = {},
             statusMessage = "",
@@ -182,6 +183,8 @@ function Model:backspace()
         self.cursorX = #self.buffer[self.cursorY] + 1
         self.buffer[self.cursorY] = self.buffer[self.cursorY] .. line
         self:updateStatusBar("Deleted line")
+        local view = getView()
+        view:drawScreen()
     else
         self:updateStatusError("Nothing to delete")
     end
@@ -283,13 +286,20 @@ function Model:cutLine()
 end
 
 function Model:switchMode(mode)
+    self:saveToHistory()
     self.mode = mode
+    if mode == "insert" then
+        self.InputMode = "chars"
+    else
+        self.InputMode = "keys"
+    end
     self:updateStatusBar("Switched to " .. mode .. " mode")
     if mode == "command" then
         local commandHandler = require("CommandHandler"):getInstance()
         commandHandler:handleCommandInput(self, getView())
     end
 end
+
 function Model:saveToHistory()
     -- Deep copy the current state of the buffer, cursor positions, etc.
     table.insert(self.history, {

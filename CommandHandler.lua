@@ -41,25 +41,33 @@ function CommandHandler:execute(command, model, view)
 end
 
 function CommandHandler:handleCommandInput(model, view)
-    local command = ""
+    local command = ""  -- Start with an empty command
+    local firstInput = true  -- Flag to check if it's the first input
+    model:updateStatusBar(":", view)  -- Display the initial ":"
+
     while true do
         local event, param1 = os.pullEvent()
         if event == "char" then
-            command = command .. param1
-            model:updateStatusBar(":" .. command, view)
+            if firstInput then
+                firstInput = false  -- Ignore the first character and reset the flag
+            else
+                command = command .. param1  -- Capture input after the first character
+                model:updateStatusBar(":" .. command, view)  -- Display the command prefixed with ":"
+            end
         elseif event == "key" then
             if param1 == keys.enter then
-                self:execute(command, model, view)
-                model:switchMode("normal")
+                self:execute(command, model, view)  -- Execute the command when Enter is pressed
+                model:switchMode("normal")  -- Switch back to normal mode
                 break
             elseif param1 == keys.backspace then
-                command = command:sub(1, -2)
+                command = command:sub(1, -2)  -- Handle backspace
                 model:updateStatusBar(":" .. command, view)
             elseif param1 == keys.escape then
-                return
+                return  -- Exit command mode on Escape
             end
         end
     end
 end
+
 
 return CommandHandler

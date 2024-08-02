@@ -1,5 +1,5 @@
 -- Input Test Application
-
+-- this was just a test
 -- Table to track the state of modifier keys
 local keyStates = {
     shift = false,
