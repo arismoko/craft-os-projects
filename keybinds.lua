@@ -51,7 +51,7 @@ KeyHandler:map("normal", "ctrl + r", function()
     View:drawScreen()
 end)
 
-KeyHandler:map("normal", "shift + ;", function()
+KeyHandler:map("normal", "shift + semicolon", function()
     Model:switchMode("command")
 end)
 KeyHandler:map("normal", "i", function ()
