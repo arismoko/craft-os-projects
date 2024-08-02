@@ -1,13 +1,13 @@
 -- Input Test Application
 
-local keys = require("keys")  -- Replace this with actual key codes for your environment
-
+-- Table to track the state of modifier keys
 local keyStates = {
     shift = false,
     ctrl = false,
     alt = false
 }
 
+-- Modifier key mapping
 local modifierKeys = {
     [keys.leftShift] = "shift",
     [keys.rightShift] = "shift",
@@ -24,7 +24,7 @@ local function handleKeyPress(key, isDown)
         keyStates[modifierKeys[key]] = isDown
         print("Modifier key:", keys.getName(key), "is now", isDown and "down" or "up")
     else
-        -- Create a combination key string
+        -- Capture the key press/release and modifiers
         local combo = {}
         if keyStates["ctrl"] then table.insert(combo, "ctrl") end
         if keyStates["shift"] then table.insert(combo, "shift") end
@@ -32,7 +32,6 @@ local function handleKeyPress(key, isDown)
         table.insert(combo, keys.getName(key))
         local comboKey = table.concat(combo, "+")
 
-        -- Print the key press
         if isDown then
             print("Key Pressed:", comboKey)
         else
@@ -41,19 +40,22 @@ local function handleKeyPress(key, isDown)
     end
 end
 
--- Event loop to capture key events
+-- Main event loop
 local function eventLoop()
+    print("Starting input test. Press keys to see the output. Press 'q' to quit.")
     while true do
         local event, key = os.pullEvent()
-
         if event == "key" then
             handleKeyPress(key, true)
+            if key == keys.q then
+                print("Exiting input test.")
+                break
+            end
         elseif event == "key_up" then
             handleKeyPress(key, false)
         end
     end
 end
 
--- Start the event loop
-print("Starting Key Input Test. Press keys to see their output.")
+-- Run the event loop
 eventLoop()
