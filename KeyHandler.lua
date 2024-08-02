@@ -54,76 +54,72 @@ function KeyHandler:parseKeyCombo(combo)
 end
 
 function KeyHandler:map(mode, keyCombo, callback)
-    -- Check if keyCombo is a string or a key code
-    if type(keyCombo) == "string" then
-        -- Handle string-based key combinations
-        local modifiers, mainKey = self:parseKeyCombo(keyCombo)
-        local comboKey
-        if #modifiers > 0 then
-            comboKey = table.concat(modifiers, "+") .. (mainKey and "+" .. mainKey or "")
-        else
-            comboKey = mainKey
+    local modifiers, mainKey = self:parseKeyCombo(keyCombo)
+    local targetMap = self.keyMap[mode]
+
+    -- If there are modifiers, create nested tables for them
+    if #modifiers > 0 then
+        local currentMap = targetMap
+
+        -- Create nested tables for each modifier
+        for _, mod in ipairs(modifiers) do
+            if not currentMap[mod] then
+                currentMap[mod] = {}
+            end
+            currentMap = currentMap[mod]
         end
 
-        if not self.keyMap[mode] then
-            self.keyMap[mode] = {}
-        end
-
-        self.keyMap[mode][comboKey] = callback
-        print("Mapped key:", comboKey, "to mode:", mode)
+        -- Assign the callback to the final main key
+        currentMap[mainKey] = callback
+        print("Mapped key:", table.concat(modifiers, "+") .. "+" .. mainKey, "to mode:", mode)
     else
-        -- Handle direct key code bindings
-        if not self.keyMap[mode] then
-            self.keyMap[mode] = {}
-        end
-
-        self.keyMap[mode][keyCombo] = callback
-        print("Mapped key code:", keyCombo, "to mode:", mode)
+        -- No modifiers, assign directly
+        targetMap[mainKey] = callback
+        print("Mapped key:", mainKey, "to mode:", mode)
     end
 end
 
 function KeyHandler:handleKeyPress(key, isDown, model, view, commandHandler)
+    local currentMap = self.keyMap[model.mode]
+    
+    -- Update modifier state
     if self.modifierKeys[key] then
         self.keyStates[self.modifierKeys[key]] = isDown
-        model:updateStatusBar("Modifier key:", keys.getName(key), "is now", isDown and "down" or "up")
-    else
-        local combo = {}
-        if self.keyStates["ctrl"] then table.insert(combo, "ctrl") end
-        if self.keyStates["shift"] then table.insert(combo, "shift") end
-        if self.keyStates["alt"] then table.insert(combo, "alt") end
-        table.insert(combo, keys.getName(key))
-        local comboKey = table.concat(combo, "+")
+        return
+    end
 
-        if isDown then
-            local action = self.keyMap[model.mode][comboKey] or self.keyMap[model.mode][key]
-            if type(action) == "function" then
-                action()
-            elseif type(action) == "string" then
-                if action:match("^switch:") then
-                    local newMode = action:match("^switch:(.+)")
-                    if newMode == "command" then
-                        commandHandler:handleCommandInput(model, view)
-                    else
-                        model.mode = newMode
-                        model.statusMessage = "Switched to " .. newMode .. " mode"
-                        view:drawStatusBar(model, view:getScreenWidth(), view:getScreenHeight())
-                        model:updateStatusBar("Switched to " .. newMode .. " mode")
-                    end
+    -- Traverse keymap according to current modifier state
+    if self.keyStates["ctrl"] then currentMap = currentMap.ctrl or {} end
+    if self.keyStates["shift"] then currentMap = currentMap.shift or {} end
+    if self.keyStates["alt"] then currentMap = currentMap.alt or {} end
+
+    local action = currentMap[keys.getName(key)]
+    if isDown and action then
+        if type(action) == "function" then
+            action()
+        elseif type(action) == "string" then
+            if action:match("^switch:") then
+                local newMode = action:match("^switch:(.+)")
+                if newMode == "command" then
+                    commandHandler:handleCommandInput(model, view)
+                else
+                    model.mode = newMode
+                    model:updateStatusBar("Switched to " .. newMode .. " mode")
                 end
-            else
-                model:updateStatusBar("Unmapped key:", comboKey, "in mode:", model.mode)
             end
         end
+    else
+        model:updateStatusBar("Unmapped key:", keys.getName(key), "in mode:", model.mode)
     end
 end
 
-function KeyHandler:handleKeyEvent(mode, model, view)
+function KeyHandler:handleKeyEvent(mode, model, view, commandHandler)
     local event, key = os.pullEvent()
 
     if event == "key" then
-        self:handleKeyPress(key, true, model, view)
+        self:handleKeyPress(key, true, model, view, commandHandler)
     elseif event == "key_up" then
-        self:handleKeyPress(key, false, model, view)
+        self:handleKeyPress(key, false, model, view, commandHandler)
     end
 end
 
