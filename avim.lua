@@ -14,15 +14,16 @@ require("keybinds")
 require("commands")
 -- Main event loop
 local function eventLoop()
+    View:drawScreen()
     while not Model.shouldExit do
         KeyHandler:handleKeyEvent(Model.mode, Model, View, CommandHandler)
 
         if Model:updateScroll(View:getScreenHeight()) then
-            View:drawScreen(Model)
+            View:drawScreen()
         else
             View:drawLine(Model.cursorY - Model.scrollOffset)
         end
-        View:updateCursor(Model)
+        View:updateCursor()
     end
 end
 
