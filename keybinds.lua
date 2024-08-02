@@ -1,6 +1,6 @@
 -- keybinds.lua
 
-local function setupKeybinds(keyHandler, Model, View, modes)
+local function setupKeybinds(keyHandler, Model, View)
     -- Normal mode keybindings
     keyHandler:map("normal", "h", function()
         Model.cursorX = math.max(1, Model.cursorX - 1)
@@ -28,12 +28,6 @@ local function setupKeybinds(keyHandler, Model, View, modes)
         Model:yankLine()
     end)
 
-    keyHandler:map("normal", "Y", function()
-        Model:yankLine()
-        Model.statusMessage = "Yanked entire line"
-        View:drawStatusBar(Model, View:getScreenWidth(), View:getScreenHeight())
-    end)
-
     keyHandler:map("normal", "p", function()
         Model:paste()
         View:drawLine(Model, Model.cursorY - Model.scrollOffset)
@@ -43,18 +37,6 @@ local function setupKeybinds(keyHandler, Model, View, modes)
 
     keyHandler:map("normal", "d", function()
         Model:cutLine()
-        View:drawScreen(Model, View:getScreenWidth(), View:getScreenHeight())
-    end)
-
-    keyHandler:map("normal", "D", function()
-        Model:cutLine()
-        Model.statusMessage = "Deleted entire line"
-        View:drawStatusBar(Model, View:getScreenWidth(), View:getScreenHeight())
-    end)
-
-    keyHandler:map("normal", "x", function()
-        Model:saveToHistory()
-        Model:backspace()
         View:drawScreen(Model, View:getScreenWidth(), View:getScreenHeight())
     end)
 
@@ -68,41 +50,10 @@ local function setupKeybinds(keyHandler, Model, View, modes)
         View:drawScreen(Model, View:getScreenWidth(), View:getScreenHeight())
     end)
 
-    keyHandler:map("normal", "o", function()
-        Model:saveToHistory()
-        Model:enter()
-        modes.handleInsertMode(Model, View)
-    end)
-
-    keyHandler:map("normal", "c^ + x", function()
-        Model:cutLine()
-        Model.statusMessage = "Ctrl + X: Cut line"
-        View:drawStatusBar(Model, View:getScreenWidth(), View:getScreenHeight())
-    end)
-
-    keyHandler:map("normal", "a^ + s", function()
-        Model:saveFile()
-        Model.statusMessage = "Alt + S: File saved"
-        View:drawStatusBar(Model, View:getScreenWidth(), View:getScreenHeight())
-    end)
-
-    keyHandler:map("normal", "s", function()
-        Model:saveFile()
-        Model.statusMessage = "File saved"
-        View:drawStatusBar(Model, View:getScreenWidth(), View:getScreenHeight())
-    end)
-
-    keyHandler:map("normal", "i", function()
-        modes.handleInsertMode(Model, View)
-    end)
-
-    keyHandler:map("normal", "q", function()
-        Model.shouldExit = true  -- Set the exit flag
-    end)
-
-    keyHandler:map("normal", "v", function()
-        Model:startVisualMode()
-        modes.handleVisualMode(Model, View)
+    keyHandler:map("normal", "i", "switch:insert")
+    keyHandler:map("normal", "v", "switch:visual")
+    keyHandler:map("normal", "escape", function()
+        Model.shouldExit = true
     end)
 
     -- Visual mode keybindings
@@ -135,35 +86,19 @@ local function setupKeybinds(keyHandler, Model, View, modes)
     keyHandler:map("visual", "y", function()
         Model:yankSelection()
         Model:endVisualMode()
-        modes.handleNormalMode(Model, View)
+        keyHandler:map("visual", "escape", "switch:normal")
     end)
 
     keyHandler:map("visual", "d", function()
         Model:cutSelection()
         View:drawScreen(Model, View:getScreenWidth(), View:getScreenHeight())
-        modes.handleNormalMode(Model, View)
+        keyHandler:map("visual", "escape", "switch:normal")
     end)
 
-    keyHandler:map("visual", "x", function()
-        Model:cutSelection()
-        View:drawScreen(Model, View:getScreenWidth(), View:getScreenHeight())
-        modes.handleNormalMode(Model, View)
-    end)
-
-    keyHandler:map("visual", "o", function()
-        Model:endVisualMode()
-        Model:startVisualMode()
-    end)
-
-    keyHandler:map("visual", "escape", function()
-        Model:endVisualMode()
-        modes.handleNormalMode(Model, View)
-    end)
+    keyHandler:map("visual", "escape", "switch:normal")
 
     -- Insert mode keybindings
-    keyHandler:map("insert", "escape", function()
-        modes.handleNormalMode(Model, View)
-    end)
+    keyHandler:map("insert", "escape", "switch:normal")
 end
 
 return setupKeybinds

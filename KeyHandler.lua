@@ -73,14 +73,17 @@ function KeyHandler:handleKeyPress(key, isDown, model, view)
         local comboKey = table.concat(combo, "+")
 
         if isDown then
-            if self.keyMap[model.mode][comboKey] then
-                print("Executing action for comboKey:", comboKey)
-                self.keyMap[model.mode][comboKey]()
-            elseif self.keyMap[model.mode][keys.getName(key)] then
-                print("Executing action for single key:", keys.getName(key))
-                self.keyMap[model.mode][keys.getName(key)]()
+            local action = self.keyMap[model.mode][comboKey]
+            if type(action) == "function" then
+                action()
+            elseif type(action) == "string" and action:match("^switch:") then
+                local newMode = action:match("^switch:(.+)")
+                model.mode = newMode
+                model.statusMessage = "Switched to " .. newMode .. " mode"
+                view:drawStatusBar(model, view:getScreenWidth(), view:getScreenHeight())
+                print("Switched to " .. newMode .. " mode")
             else
-                print("Unmapped key:", comboKey, "or", keys.getName(key), "in mode:", model.mode)
+                print("Unmapped key:", comboKey, "in mode:", model.mode)
             end
         end
     end
