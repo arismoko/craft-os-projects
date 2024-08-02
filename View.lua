@@ -115,7 +115,9 @@ end
 
 function View:drawScreen()
     if self.activeWindow then
+        term.clear()
         self.activeWindow:show()
+        return
     else
         local model = Model -- Use the singleton Model instance directly
         term.clear()
