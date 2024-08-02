@@ -34,7 +34,7 @@ end
 
 function KeyHandler:getInstance()
     if not instance then
-        error("KeyHandler instance has not been created yet. Call KeyHandler:new() first.")
+        instance = KeyHandler:new() 
     end
     return instance
 end

@@ -30,7 +30,7 @@ end
 
 function Model:getInstance()
     if not instance then
-        error("Model instance has not been created yet. Call Model:new() first.")
+        instance = Model:new()
     end
     return instance
 end

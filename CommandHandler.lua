@@ -16,7 +16,7 @@ end
 
 function CommandHandler:getInstance()
     if not instance then
-        error("CommandHandler instance has not been created yet. Call CommandHandler:new() first.")
+        instance = CommandHandler:new()
     end
     return instance
 end

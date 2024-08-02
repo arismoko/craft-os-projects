@@ -17,7 +17,7 @@ end
 
 function View:getInstance()
     if not instance then
-        error("View instance has not been created yet. Call View:new() first.")
+        instance = View:new() 
     end
     return instance
 end
