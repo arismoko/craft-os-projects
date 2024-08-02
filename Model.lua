@@ -3,7 +3,7 @@ Model = {}
 Model.__index = Model
 
 local instance
-
+local view = require("View"):getInstance()
 function Model:new()
     if not instance then
         instance = {
@@ -35,22 +35,22 @@ function Model:getInstance()
     return instance
 end
 
-function Model:updateStatusBar(message, view)
+function Model:updateStatusBar(message)
     self.statusMessage = message
     self.statusColor = colors.green -- Reset to default color
-    view:drawStatusBar(self, view:getScreenWidth(), view:getScreenHeight())
+    view:drawStatusBar(self:getScreenWidth(), view:getScreenHeight())
 end
 
-function Model:updateStatusError(message, view)
+function Model:updateStatusError(message)
     self.statusMessage = message
     self.statusColor = colors.red -- Set color to red for errors
-    view:drawStatusBar(self, view:getScreenWidth(), view:getScreenHeight())
+    view:drawStatusBar(self:getScreenWidth(), view:getScreenHeight())
 end
 
 function Model:clearStatusBar(view)
     self.statusMessage = ""
     self.statusColor = colors.green -- Reset to default color
-    view:drawStatusBar(self, view:getScreenWidth(), view:getScreenHeight())
+    view:drawStatusBar(self:getScreenWidth(), view:getScreenHeight())
 end
 
 function Model:saveToHistory()
@@ -73,9 +73,9 @@ function Model:undo(view)
         self.buffer = lastState.buffer
         self.cursorX = lastState.cursorX
         self.cursorY = lastState.cursorY
-        self:updateStatusBar("Undid last action", view)
+        self:updateStatusBar("Undid last action")
     else
-        self:updateStatusError("Nothing to undo", view)
+        self:updateStatusError("Nothing to undo")
     end
 end
 
@@ -90,9 +90,9 @@ function Model:redo(view)
         self.buffer = redoState.buffer
         self.cursorX = redoState.cursorX
         self.cursorY = redoState.cursorY
-        self:updateStatusBar("Redid last action", view)
+        self:updateStatusBar("Redid last action")
     else
-        self:updateStatusError("Nothing to redo", view)
+        self:updateStatusError("Nothing to redo")
     end
 end
 
@@ -100,17 +100,17 @@ function Model:startVisualMode(view)
     self.visualStartX = self.cursorX
     self.visualStartY = self.cursorY
     self.isVisualMode = true
-    self:updateStatusBar("Entered visual mode", view)
+    self:updateStatusBar("Entered visual mode")
 end
 
 function Model:endVisualMode(view)
     self.visualStartX = nil
     self.visualStartY = nil
     self.isVisualMode = false
-    self:updateStatusBar("Exited visual mode", view)
+    self:updateStatusBar("Exited visual mode")
 end
 
-function Model:loadFile(name, view)
+function Model:loadFile(name)
     self.filename = name
     self.buffer = {}
     if fs.exists(self.filename) then
@@ -119,10 +119,10 @@ function Model:loadFile(name, view)
             table.insert(self.buffer, line)
         end
         file.close()
-        self:updateStatusBar("Loaded file: " .. self.filename, view)
+        self:updateStatusBar("Loaded file: " .. self.filename)
     else
         table.insert(self.buffer, "")
-        self:updateStatusError("File not found, created new file: " .. self.filename, view)
+        self:updateStatusError("File not found, created new file: " .. self.filename)
     end
 end
 
@@ -132,7 +132,7 @@ function Model:saveFile(view)
         file.writeLine(line)
     end
     file.close()
-    self:updateStatusBar("File saved: " .. self.filename, view)
+    self:updateStatusBar("File saved: " .. self.filename)
 end
 
 function Model:updateScroll(screenHeight)
@@ -150,12 +150,12 @@ function Model:updateScroll(screenHeight)
     return false
 end
 
-function Model:insertChar(char, view)
+function Model:insertChar(char)
     self:saveToHistory()
     local line = self.buffer[self.cursorY]
     self.buffer[self.cursorY] = line:sub(1, self.cursorX - 1) .. char .. line:sub(self.cursorX)
     self.cursorX = self.cursorX + 1
-    self:updateStatusBar("Inserted character", view)
+    self:updateStatusBar("Inserted character")
 end
 
 function Model:backspace(view)
@@ -164,16 +164,16 @@ function Model:backspace(view)
         local line = self.buffer[self.cursorY]
         self.buffer[self.cursorY] = line:sub(1, self.cursorX - 2) .. line:sub(self.cursorX)
         self.cursorX = self.cursorX - 1
-        self:updateStatusBar("Deleted character", view)
+        self:updateStatusBar("Deleted character")
     elseif self.cursorY > 1 then
         self:saveToHistory()
         local line = table.remove(self.buffer, self.cursorY)
         self.cursorY = self.cursorY - 1
         self.cursorX = #self.buffer[self.cursorY] + 1
         self.buffer[self.cursorY] = self.buffer[self.cursorY] .. line
-        self:updateStatusBar("Deleted line", view)
+        self:updateStatusBar("Deleted line")
     else
-        self:updateStatusError("Nothing to delete", view)
+        self:updateStatusError("Nothing to delete")
     end
 end
 
@@ -185,12 +185,12 @@ function Model:enter(view)
     table.insert(self.buffer, self.cursorY + 1, newLine)
     self.cursorY = self.cursorY + 1
     self.cursorX = 1
-    self:updateStatusBar("Inserted new line", view)
+    self:updateStatusBar("Inserted new line")
 end
 
 function Model:yankLine(view)
     self.yankRegister = self.buffer[self.cursorY]
-    self:updateStatusBar("Yanked line", view)
+    self:updateStatusBar("Yanked line")
 end
 
 function Model:paste(view)
@@ -198,7 +198,7 @@ function Model:paste(view)
     local line = self.buffer[self.cursorY]
     self.buffer[self.cursorY] = line:sub(1, self.cursorX - 1) .. self.yankRegister .. line:sub(self.cursorX)
     self.cursorX = self.cursorX + #self.yankRegister
-    self:updateStatusBar("Pasted text", view)
+    self:updateStatusBar("Pasted text")
 end
 
 function Model:yankSelection(view)
@@ -221,7 +221,7 @@ function Model:yankSelection(view)
         end
         self.yankRegister = self.yankRegister .. yankText .. "\n"
     end
-    self:updateStatusBar("Yanked selection", view)
+    self:updateStatusBar("Yanked selection")
 end
 
 function Model:cutSelection(view)
@@ -258,7 +258,7 @@ function Model:cutSelection(view)
         table.remove(self.buffer, startY + 1)
     end
 
-    self:updateStatusBar("Cut selection", view)
+    self:updateStatusBar("Cut selection")
 end
 
 function Model:cutLine(view)
@@ -269,7 +269,7 @@ function Model:cutLine(view)
         self.cursorY = #self.buffer
     end
     self.cursorX = 1
-    self:updateStatusBar("Cut line", view)
+    self:updateStatusBar("Cut line")
 end
 
 return Model
