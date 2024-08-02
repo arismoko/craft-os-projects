@@ -107,10 +107,12 @@ KeyHandler:map("normal", keys.f1, function()
     -- Print some text in the window
     keybindsWindow:print("Current Keybindings:")
     for mode, keyMap in pairs(KeyHandler.keyMap) do
+        keybindsWindow:writeline(" ")
         keybindsWindow:writeline("Mode: " .. mode)
         local i = 1
         for key, _ in pairs(keyMap) do
             keybindsWindow:write("  " .. i .. ": " .. key .. ",")
+            i = i + 1
         end
     end
 
