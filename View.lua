@@ -37,7 +37,7 @@ function View:getScreenHeight()
 end
 
 
--- Function to create a new window
+--- Function to create a new window
 function View:createWindow(x, y, width, height, backgroundColor, textColor)
     local window = {
         x = x,
@@ -47,7 +47,8 @@ function View:createWindow(x, y, width, height, backgroundColor, textColor)
         backgroundColor = backgroundColor or colors.black,
         textColor = textColor or colors.white,
         buffer = {},
-        currentLine = 1 -- Track the current line for printing
+        currentLine = 1, -- Track the current line for printing
+        currentColumn = 1 -- Track the current column for writing
     }
 
     -- Initialize the window's buffer
@@ -75,10 +76,32 @@ function View:createWindow(x, y, width, height, backgroundColor, textColor)
     end
 
     -- Function to write text at a specific position in the window
-    function window:write(x, y, text)
+    function window:writeText(x, y, text)
         local line = self.buffer[y]
         self.buffer[y] = line:sub(1, x - 1) .. text .. line:sub(x + #text)
         self:show() -- Refresh the window display after writing
+    end
+
+    -- Function to write text continuously without a newline
+    function window:write(text)
+        local remainingSpace = self.width - self.currentColumn + 1
+        local textToWrite = text:sub(1, remainingSpace)
+
+        self:writeText(self.currentColumn, self.currentLine, textToWrite)
+        self.currentColumn = self.currentColumn + #textToWrite
+
+        -- Handle overflow to the next line
+        if self.currentColumn > self.width then
+            self.currentLine = self.currentLine + 1
+            self.currentColumn = 1
+        end
+    end
+
+    -- Function to write text with an automatic newline
+    function window:writeline(text)
+        self:write(text)
+        self.currentLine = self.currentLine + 1
+        self.currentColumn = 1
     end
 
     -- Function to clear the window's content
@@ -87,16 +110,25 @@ function View:createWindow(x, y, width, height, backgroundColor, textColor)
             self.buffer[i] = string.rep(" ", self.width)
         end
         self.currentLine = 1 -- Reset current line to the top
+        self.currentColumn = 1 -- Reset current column to the start
         self:show() -- Refresh the window display after clearing
     end
 
     -- Function to print text on the next available line in the window
     function window:print(text)
-        if self.currentLine > self.height then
-            return -- Stop printing if we run out of space
+        local lines = {}
+
+        -- Split text by newlines to handle multi-line text
+        for line in text:gmatch("[^\r\n]+") do
+            table.insert(lines, line)
         end
-        self:write(1, self.currentLine, text)
-        self.currentLine = self.currentLine + 1
+
+        for _, line in ipairs(lines) do
+            if self.currentLine > self.height then
+                return -- Stop printing if we run out of space
+            end
+            self:writeline(line)
+        end
     end
 
     -- Store the window in the View's windows table
@@ -104,6 +136,7 @@ function View:createWindow(x, y, width, height, backgroundColor, textColor)
 
     return window
 end
+
 
 -- Function to close all windows
 function View:closeAllWindows()
