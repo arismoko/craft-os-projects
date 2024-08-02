@@ -36,23 +36,6 @@ function View:getScreenHeight()
     return self.screenHeight
 end
 
--- Function to save the current screen content
-function View:saveScreen()
-    self.savedScreenBuffer = {}
-    for y = 1, self.screenHeight do
-        term.setCursorPos(1, y)
-        self.savedScreenBuffer[y] = term.getLine(y) -- Assume getLine is implemented
-    end
-end
-
--- Function to restore the saved screen content
-function View:restoreScreen()
-    term.clear()
-    for y = 1, #self.savedScreenBuffer do
-        term.setCursorPos(1, y)
-        term.write(self.savedScreenBuffer[y])
-    end
-end
 
 -- Function to create a new window
 function View:createWindow(x, y, width, height, backgroundColor, textColor)
@@ -74,9 +57,6 @@ function View:createWindow(x, y, width, height, backgroundColor, textColor)
 
     -- Function to show the window
     function window:show()
-        if not View:getInstance().activeWindow then
-            View:getInstance():saveScreen() -- Save the current screen before displaying the window
-        end
         View:getInstance().activeWindow = self -- Set this window as the active window
         term.setBackgroundColor(self.backgroundColor)
         term.setTextColor(self.textColor)
@@ -91,7 +71,6 @@ function View:createWindow(x, y, width, height, backgroundColor, textColor)
     -- Function to close the window (restores the main buffer)
     function window:close()
         View:getInstance().activeWindow = nil -- Clear the active window
-        View:getInstance():restoreScreen() -- Restore the original screen content
     end
 
     -- Function to write text at a specific position in the window
