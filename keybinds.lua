@@ -100,7 +100,7 @@ KeyHandler:map("visual", "escape", "switch:normal")
 -- Insert mode keybindings
 KeyHandler:map("insert", "escape", "switch:normal")
 
-KeyHandler:map("normal", keys.f1, function()
+KeyHandler:map("normal", "f1", function()
     -- Create a new window that uses the maximum available size
     local keybindsWindow = View:createWindow(1, 1)
 
@@ -120,7 +120,7 @@ KeyHandler:map("normal", keys.f1, function()
     keybindsWindow:show()
 end)
 
-KeyHandler:map("normal", keys.f4, function()
+KeyHandler:map("normal", "f4", function()
     View:closeAllWindows()
 end)
 
