@@ -2,12 +2,23 @@
 View = {}
 View.__index = View
 
+local instance
+
 function View:new(screenWidth, screenHeight)
-    local instance = {
-        screenWidth = screenWidth,
-        screenHeight = screenHeight
-    }
-    setmetatable(instance, View)
+    if not instance then
+        instance = {
+            screenWidth = screenWidth,
+            screenHeight = screenHeight
+        }
+        setmetatable(instance, View)
+    end
+    return instance
+end
+
+function View:getInstance()
+    if not instance then
+        error("View instance has not been created yet. Call View:new() first.")
+    end
     return instance
 end
 

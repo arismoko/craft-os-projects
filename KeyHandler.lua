@@ -2,29 +2,40 @@
 KeyHandler = {}
 KeyHandler.__index = KeyHandler
 
+local instance
+
 function KeyHandler:new()
-    local instance = {
-        keyStates = {
-            shift = false,
-            ctrl = false,
-            alt = false
-        },
-        modifierKeys = {
-            [keys.leftShift] = "shift",
-            [keys.rightShift] = "shift",
-            [keys.leftCtrl] = "ctrl",
-            [keys.rightCtrl] = "ctrl",
-            [keys.leftAlt] = "alt",
-            [keys.rightAlt] = "alt"
-        },
-        keyMap = {
-            normal = {},
-            insert = {},
-            visual = {},
-            command = {}
+    if not instance then
+        instance = {
+            keyStates = {
+                shift = false,
+                ctrl = false,
+                alt = false
+            },
+            modifierKeys = {
+                [keys.leftShift] = "shift",
+                [keys.rightShift] = "shift",
+                [keys.leftCtrl] = "ctrl",
+                [keys.rightCtrl] = "ctrl",
+                [keys.leftAlt] = "alt",
+                [keys.rightAlt] = "alt"
+            },
+            keyMap = {
+                normal = {},
+                insert = {},
+                visual = {},
+                command = {}
+            }
         }
-    }
-    setmetatable(instance, KeyHandler)
+        setmetatable(instance, KeyHandler)
+    end
+    return instance
+end
+
+function KeyHandler:getInstance()
+    if not instance then
+        error("KeyHandler instance has not been created yet. Call KeyHandler:new() first.")
+    end
     return instance
 end
 

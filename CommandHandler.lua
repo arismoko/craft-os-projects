@@ -1,14 +1,25 @@
+-- CommandHandler.lua
 CommandHandler = {}
 CommandHandler.__index = CommandHandler
 
+local instance
+
 function CommandHandler:new()
-    local instance = {
-        commands = {}
-    }
-    setmetatable(instance, CommandHandler)
+    if not instance then
+        instance = {
+            commands = {}
+        }
+        setmetatable(instance, CommandHandler)
+    end
     return instance
 end
 
+function CommandHandler:getInstance()
+    if not instance then
+        error("CommandHandler instance has not been created yet. Call CommandHandler:new() first.")
+    end
+    return instance
+end
 function CommandHandler:map(name, func)
     self.commands[name] = func
 end

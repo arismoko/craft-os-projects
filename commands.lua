@@ -1,83 +1,84 @@
-local function setupCommands(commands, Model, View)
-    -- Quit command
-    commands:map("q", function(model, view)
-        model.shouldExit = true
-        model:updateStatusBar("Exited AVIM", view)
-    end)
+-- commands.lua
+local CommandHandler = require("CommandHandler"):getInstance()
+local Model = require("Model"):getInstance()
+local View = require("View"):getInstance()
 
-    -- Save command
-    commands:map("w", function(model, view)
-        model:saveFile()
-        model:updateStatusBar("File saved", view)
-    end)
+-- Quit command
+CommandHandler:map("q", function()
+    Model.shouldExit = true
+    Model:updateStatusBar("Exited AVIM")
+end)
 
-    -- Find command
-    commands:map("find", function(model, view, pattern)
-        if not pattern then
-            model:updateStatusError("No pattern provided for find", view)
+-- Save command
+CommandHandler:map("w", function()
+    Model:saveFile()
+    Model:updateStatusBar("File saved")
+end)
+
+-- Find command
+CommandHandler:map("find", function(_, pattern)
+    if not pattern then
+        Model:updateStatusError("No pattern provided for find")
+        return
+    end
+    for y, line in ipairs(Model.buffer) do
+        local startX, endX = line:find(pattern)
+        if startX then
+            Model.cursorY = y
+            Model.cursorX = startX
+            Model:updateScroll(View:getScreenHeight())
+            View:drawScreen(Model)
+            Model:updateStatusBar("Found '" .. pattern .. "' at line " .. y)
             return
         end
-        for y, line in ipairs(model.buffer) do
-            local startX, endX = line:find(pattern)
-            if startX then
-                model.cursorY = y
-                model.cursorX = startX
-                model:updateScroll(view:getScreenHeight())
-                view:drawScreen(model, view:getScreenWidth(), view:getScreenHeight())
-                model:updateStatusBar("Found '" .. pattern .. "' at line " .. y, view)
-                return
-            end
-        end
-        model:updateStatusError("Pattern '" .. pattern .. "' not found", view)
-    end)
+    end
+    Model:updateStatusError("Pattern '" .. pattern .. "' not found")
+end)
 
-    -- Replace command
-    commands:map("replace", function(model, view, oldPattern, newPattern)
-        if not oldPattern or not newPattern then
-            model:updateStatusError("Usage: :replace <old> <new>", view)
-            return
+-- Replace command
+CommandHandler:map("replace", function(_, oldPattern, newPattern)
+    if not oldPattern or not newPattern then
+        Model:updateStatusError("Usage: :replace <old> <new>")
+        return
+    end
+    local replacements = 0
+    for y, line in ipairs(Model.buffer) do
+        local newLine, count = line:gsub(oldPattern, newPattern)
+        if count > 0 then
+            Model.buffer[y] = newLine
+            replacements = replacements + count
         end
-        local replacements = 0
-        for y, line in ipairs(model.buffer) do
-            local newLine, count = line:gsub(oldPattern, newPattern)
-            if count > 0 then
-                model.buffer[y] = newLine
-                replacements = replacements + count
-            end
-        end
-        model:updateScroll(view:getScreenHeight())
-        view:drawScreen(model, view:getScreenWidth(), view:getScreenHeight())
-        model:updateStatusBar("Replaced " .. replacements .. " occurrence(s) of '" .. oldPattern .. "' with '" .. newPattern .. "'", view)
-    end)
+    end
+    Model:updateScroll(View:getScreenHeight())
+    View:drawScreen(Model)
+    Model:updateStatusBar("Replaced " .. replacements .. " occurrence(s) of '" .. oldPattern .. "' with '" .. newPattern .. "'")
+end)
 
-    -- Delete line command
-    commands:map("delete", function(model, view, lineNumber)
-        lineNumber = tonumber(lineNumber)
-        if not lineNumber or lineNumber < 1 or lineNumber > #model.buffer then
-            model:updateStatusError("Invalid line number: " .. (lineNumber or ""), view)
-            return
-        end
-        table.remove(model.buffer, lineNumber)
-        model.cursorY = math.min(model.cursorY, #model.buffer)
-        model.cursorX = 1
-        model:updateScroll(view:getScreenHeight())
-        view:drawScreen(model, view:getScreenWidth(), view:getScreenHeight())
-        model:updateStatusBar("Deleted line " .. lineNumber, view)
-    end)
+-- Delete line command
+CommandHandler:map("delete", function(_, lineNumber)
+    lineNumber = tonumber(lineNumber)
+    if not lineNumber or lineNumber < 1 or lineNumber > #Model.buffer then
+        Model:updateStatusError("Invalid line number: " .. (lineNumber or ""))
+        return
+    end
+    table.remove(Model.buffer, lineNumber)
+    Model.cursorY = math.min(Model.cursorY, #Model.buffer)
+    Model.cursorX = 1
+    Model:updateScroll(View:getScreenHeight())
+    View:drawScreen(Model)
+    Model:updateStatusBar("Deleted line " .. lineNumber)
+end)
 
-    -- Go to line command
-    commands:map("goto", function(model, view, lineNumber)
-        lineNumber = tonumber(lineNumber)
-        if not lineNumber or lineNumber < 1 or lineNumber > #model.buffer then
-            model:updateStatusError("Invalid line number: " .. (lineNumber or ""), view)
-            return
-        end
-        model.cursorY = lineNumber
-        model.cursorX = 1
-        model:updateScroll(view:getScreenHeight())
-        view:drawScreen(model, view:getScreenWidth(), view:getScreenHeight())
-        model:updateStatusBar("Moved to line " .. lineNumber, view)
-    end)
-end
-
-return setupCommands
+-- Go to line command
+CommandHandler:map("goto", function(_, lineNumber)
+    lineNumber = tonumber(lineNumber)
+    if not lineNumber or lineNumber < 1 or lineNumber > #Model.buffer then
+        Model:updateStatusError("Invalid line number: " .. (lineNumber or ""))
+        return
+    end
+    Model.cursorY = lineNumber
+    Model.cursorX = 1
+    Model:updateScroll(View:getScreenHeight())
+    View:drawScreen(Model)
+    Model:updateStatusBar("Moved to line " .. lineNumber)
+end)

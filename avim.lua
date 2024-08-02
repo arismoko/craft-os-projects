@@ -1,32 +1,27 @@
 -- main.lua
-local Model = require("Model")
-local View = require("View")
-local KeyHandler = require("KeyHandler")
-local CommandHandler = require("CommandHandler")
+local Model = require("Model"):getInstance()
+local View = require("View"):getInstance()
+local KeyHandler = require("KeyHandler"):getInstance()
+local CommandHandler = require("CommandHandler"):getInstance()
 
 local screenWidth, screenHeight = term.getSize()
 
--- Instantiate classes
-local model = Model:new()
-local view = View:new(screenWidth, screenHeight)
-local keyHandler = KeyHandler:new()
-local commandHandler = CommandHandler:new()
+-- Initialize the View singleton with screen dimensions
+View:new(screenWidth, screenHeight)
 
 -- Load keybindings
-local setupKeybinds = require("keybinds")
-setupKeybinds(keyHandler, model, view, commandHandler)
 
 -- Main event loop
 local function eventLoop()
-    while not model.shouldExit do
-        keyHandler:handleKeyEvent(model.mode, model, view, commandHandler)
+    while not Model.shouldExit do
+        KeyHandler:handleKeyEvent(Model.mode, Model, View, CommandHandler)
 
-        if model:updateScroll(view:getScreenHeight()) then
-            view:drawScreen(model)
+        if Model:updateScroll(View:getScreenHeight()) then
+            View:drawScreen(Model)
         else
-            view:drawLine(model, model.cursorY - model.scrollOffset)
+            View:drawLine(Model, Model.cursorY - Model.scrollOffset)
         end
-        view:updateCursor(model)
+        View:updateCursor(Model)
     end
 end
 
@@ -38,23 +33,23 @@ print("Press 'n' to create a new file")
 print("Press 'o' to open a file")
 print("Press 'q' to quit")
 
-while not model.shouldExit do
+while not Model.shouldExit do
     local event, key = os.pullEvent("key")
     if key == keys.n then
         term.clear()
         term.setCursorPos(1, 1)
         print("Enter filename:")
-        model.filename = read()
-        model:loadFile(model.filename)
+        Model.filename = read()
+        Model:loadFile(Model.filename)
         eventLoop()
     elseif key == keys.o then
         term.clear()
         term.setCursorPos(1, 1)
         print("Enter filename:")
-        model.filename = read()
-        model:loadFile(model.filename)
+        Model.filename = read()
+        Model:loadFile(Model.filename)
         eventLoop()
     elseif key == keys.q then
-        model.shouldExit = true
+        Model.shouldExit = true
     end
 end

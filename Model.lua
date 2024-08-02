@@ -1,25 +1,37 @@
+-- Model.lua
 Model = {}
 Model.__index = Model
 
+local instance
+
 function Model:new()
-    local instance = {
-        buffer = {},
-        cursorX = 1,
-        cursorY = 1,
-        scrollOffset = 0,
-        filename = "",
-        yankRegister = "",
-        visualStartX = nil,
-        visualStartY = nil,
-        isVisualMode = false,
-        history = {},
-        redoStack = {},
-        statusMessage = "",
-        shouldExit = false,
-        mode = "normal",
-        statusColor = colors.green -- Default status bar color
-    }
-    setmetatable(instance, Model)
+    if not instance then
+        instance = {
+            buffer = {},
+            cursorX = 1,
+            cursorY = 1,
+            scrollOffset = 0,
+            filename = "",
+            yankRegister = "",
+            visualStartX = nil,
+            visualStartY = nil,
+            isVisualMode = false,
+            history = {},
+            redoStack = {},
+            statusMessage = "",
+            shouldExit = false,
+            mode = "normal",
+            statusColor = colors.green -- Default status bar color
+        }
+        setmetatable(instance, Model)
+    end
+    return instance
+end
+
+function Model:getInstance()
+    if not instance then
+        error("Model instance has not been created yet. Call Model:new() first.")
+    end
     return instance
 end
 
