@@ -50,6 +50,7 @@ function CommandHandler:handleCommandInput(model, view)
         elseif event == "key" then
             if param1 == keys.enter then
                 self:execute(command, model, view)
+                model:switchMode("normal")
                 return
             elseif param1 == keys.backspace then
                 command = command:sub(1, -2)
