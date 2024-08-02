@@ -19,7 +19,7 @@ local function eventLoop()
         if Model:updateScroll(View:getScreenHeight()) then
             View:drawScreen(Model)
         else
-            View:drawLine(Model, Model.cursorY - Model.scrollOffset)
+            View:drawLine(Model.cursorY - Model.scrollOffset)
         end
         View:updateCursor(Model)
     end
