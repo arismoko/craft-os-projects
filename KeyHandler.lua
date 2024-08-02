@@ -1,4 +1,3 @@
--- KeyHandler.lua
 KeyHandler = {}
 KeyHandler.__index = KeyHandler
 
@@ -80,7 +79,14 @@ function KeyHandler:handleKeyPress(key, isDown, model, view, commandHandler)
         if self.keyStates["ctrl"] then table.insert(combo, "ctrl") end
         if self.keyStates["shift"] then table.insert(combo, "shift") end
         if self.keyStates["alt"] then table.insert(combo, "alt") end
-        table.insert(combo, keys.getName(key))
+
+        -- Handle function keys
+        local keyName = keys.getName(key)
+        if keyName:match("^f%d+$") then
+            keyName = keyName:lower() -- Convert to lowercase to match "F1", "F2", etc.
+        end
+
+        table.insert(combo, keyName)
         local comboKey = table.concat(combo, "+")
 
         if isDown then
@@ -105,7 +111,6 @@ function KeyHandler:handleKeyPress(key, isDown, model, view, commandHandler)
         end
     end
 end
-
 
 function KeyHandler:handleKeyEvent(mode, model, view)
     local event, key = os.pullEvent()
