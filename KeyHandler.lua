@@ -57,11 +57,9 @@ function KeyHandler:map(mode, keyCombo, callback)
     local modifiers, mainKey = self:parseKeyCombo(keyCombo)
     local targetMap = self.keyMap[mode]
 
-    -- If there are modifiers, create nested tables for them
     if #modifiers > 0 then
         local currentMap = targetMap
 
-        -- Create nested tables for each modifier
         for _, mod in ipairs(modifiers) do
             if not currentMap[mod] then
                 currentMap[mod] = {}
@@ -69,26 +67,30 @@ function KeyHandler:map(mode, keyCombo, callback)
             currentMap = currentMap[mod]
         end
 
-        -- Assign the callback to the final main key
         currentMap[mainKey] = callback
         print("Mapped key:", table.concat(modifiers, "+") .. "+" .. mainKey, "to mode:", mode)
     else
-        -- No modifiers, assign directly
         targetMap[mainKey] = callback
         print("Mapped key:", mainKey, "to mode:", mode)
     end
 end
 
 function KeyHandler:handleKeyPress(key, isDown, model, view, commandHandler)
-    local currentMap = self.keyMap[model.mode]
-    
-    -- Update modifier state
     if self.modifierKeys[key] then
-        self.keyStates[self.modifierKeys[key]] = isDown
+        local modifier = self.modifierKeys[key]
+        self.keyStates[modifier] = isDown
+
+        if isDown then
+            model:updateStatusBar(modifier:sub(1,1):upper() .. modifier:sub(2) .. " held, waiting for inputs")
+        else
+            model:updateStatusBar(modifier:sub(1,1):upper() .. modifier:sub(2) .. " released with no subkey found")
+        end
+
         return
     end
 
-    -- Traverse keymap according to current modifier state
+    local currentMap = self.keyMap[model.mode]
+    
     if self.keyStates["ctrl"] then currentMap = currentMap.ctrl or {} end
     if self.keyStates["shift"] then currentMap = currentMap.shift or {} end
     if self.keyStates["alt"] then currentMap = currentMap.alt or {} end
@@ -109,7 +111,7 @@ function KeyHandler:handleKeyPress(key, isDown, model, view, commandHandler)
             end
         end
     else
-        model:updateStatusBar("Unmapped key:", keys.getName(key), "in mode:", model.mode)
+        model:updateStatusBar("Unmapped key: " .. keys.getName(key) .. " in mode: " .. model.mode)
     end
 end
 
