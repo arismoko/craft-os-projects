@@ -50,7 +50,7 @@ local function setupKeybinds(keyHandler, Model, View, commandHandler)
         View:drawScreen(Model, View:getScreenWidth(), View:getScreenHeight())
     end)
 
-    keyHandler:map("normal", ":", "switch:command") 
+    keyHandler:map("normal", "shift + ;", "switch:command")
     keyHandler:map("normal", "i", "switch:insert")
     keyHandler:map("normal", "v", "switch:visual")
     keyHandler:map("normal", "escape", function()
