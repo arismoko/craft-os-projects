@@ -113,8 +113,11 @@ function KeyHandler:handleKeyPress(key, isDown, model, view, commandHandler)
                 end
             end
         end
+        -- Reset the modifier after executing the action
+        self.currentModifierHeld = ""
     end
 end
+
 
 function KeyHandler:handleKeyEvent(mode, model, view, commandHandler)
     local event, key = os.pullEvent()
