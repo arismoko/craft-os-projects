@@ -37,8 +37,19 @@ function View:getScreenHeight()
 end
 
 
---- Function to create a new window
 function View:createWindow(x, y, width, height, backgroundColor, textColor)
+    -- Set default dimensions if none are provided
+    width = width or (self.screenWidth - x + 1)
+    height = height or (self.screenHeight - y) -- Adjust for the status bar
+    
+    -- Ensure window dimensions do not exceed screen size
+    if x + width - 1 > self.screenWidth then
+        width = self.screenWidth - x + 1
+    end
+    if y + height > self.screenHeight then
+        height = self.screenHeight - y
+    end
+
     local window = {
         x = x,
         y = y,
@@ -73,6 +84,7 @@ function View:createWindow(x, y, width, height, backgroundColor, textColor)
     function window:close()
         term.clear()
         View:getInstance().activeWindow = nil -- Clear the active window
+        View:getInstance():drawScreen() -- Redraw the main screen buffer
     end
 
     -- Function to write text at a specific position in the window
@@ -136,6 +148,7 @@ function View:createWindow(x, y, width, height, backgroundColor, textColor)
 
     return window
 end
+
 
 
 -- Function to close all windows
