@@ -11,7 +11,10 @@ function View:new()
         local screenWidth, screenHeight = term.getSize()
         instance = {
             screenWidth = screenWidth,
-            screenHeight = screenHeight
+            screenHeight = screenHeight,
+            windows = {}, -- Table to store active windows
+            activeWindow = nil, -- Track the currently active window
+            savedScreenBuffer = {} -- Buffer to save the current screen content
         }
         setmetatable(instance, View)
     end
@@ -33,17 +36,118 @@ function View:getScreenHeight()
     return self.screenHeight
 end
 
-function View:drawScreen()
-    local model = Model -- Use the singleton Model instance directly
-    term.clear()
-    for i = 1, self.screenHeight - 1 do
-        self:drawLine(i)
+-- Function to save the current screen content
+function View:saveScreen()
+    self.savedScreenBuffer = {}
+    for y = 1, self.screenHeight do
+        term.setCursorPos(1, y)
+        self.savedScreenBuffer[y] = term.getLine(y) -- Assume getLine is implemented
     end
-    self:drawStatusBar()
-    term.setCursorPos(model.cursorX, model.cursorY - model.scrollOffset)
-    term.setCursorBlink(true)
 end
 
+-- Function to restore the saved screen content
+function View:restoreScreen()
+    term.clear()
+    for y = 1, #self.savedScreenBuffer do
+        term.setCursorPos(1, y)
+        term.write(self.savedScreenBuffer[y])
+    end
+end
+
+-- Function to create a new window
+function View:createWindow(x, y, width, height, backgroundColor, textColor)
+    local window = {
+        x = x,
+        y = y,
+        width = width,
+        height = height,
+        backgroundColor = backgroundColor or colors.black,
+        textColor = textColor or colors.white,
+        buffer = {},
+        currentLine = 1 -- Track the current line for printing
+    }
+
+    -- Initialize the window's buffer
+    for i = 1, height do
+        window.buffer[i] = string.rep(" ", width)
+    end
+
+    -- Function to show the window
+    function window:show()
+        if not View:getInstance().activeWindow then
+            View:getInstance():saveScreen() -- Save the current screen before displaying the window
+        end
+        View:getInstance().activeWindow = self -- Set this window as the active window
+        term.setBackgroundColor(self.backgroundColor)
+        term.setTextColor(self.textColor)
+        for i = 1, self.height do
+            term.setCursorPos(self.x, self.y + i - 1)
+            term.write(self.buffer[i])
+        end
+        term.setBackgroundColor(colors.black) -- Reset after drawing
+        term.setTextColor(colors.white) -- Reset text color
+    end
+
+    -- Function to close the window (restores the main buffer)
+    function window:close()
+        View:getInstance().activeWindow = nil -- Clear the active window
+        View:getInstance():restoreScreen() -- Restore the original screen content
+    end
+
+    -- Function to write text at a specific position in the window
+    function window:write(x, y, text)
+        local line = self.buffer[y]
+        self.buffer[y] = line:sub(1, x - 1) .. text .. line:sub(x + #text)
+        self:show() -- Refresh the window display after writing
+    end
+
+    -- Function to clear the window's content
+    function window:clear()
+        for i = 1, self.height do
+            self.buffer[i] = string.rep(" ", self.width)
+        end
+        self.currentLine = 1 -- Reset current line to the top
+        self:show() -- Refresh the window display after clearing
+    end
+
+    -- Function to print text on the next available line in the window
+    function window:print(text)
+        if self.currentLine > self.height then
+            return -- Stop printing if we run out of space
+        end
+        self:write(1, self.currentLine, text)
+        self.currentLine = self.currentLine + 1
+    end
+
+    -- Store the window in the View's windows table
+    table.insert(View:getInstance().windows, window)
+
+    return window
+end
+
+-- Function to close all windows
+function View:closeAllWindows()
+    for _, window in ipairs(self.windows) do
+        window:close()
+    end
+    self.windows = {} -- Clear the windows table
+    self.activeWindow = nil -- Clear the active window reference
+end
+
+function View:drawScreen()
+    if self.activeWindow then
+        self.activeWindow:show()
+    else
+        local model = Model -- Use the singleton Model instance directly
+        term.clear()
+        for i = 1, self.screenHeight - 1 do
+            self:drawLine(i)
+        end
+        self:drawStatusBar()
+        term.setCursorPos(model.cursorX, model.cursorY - model.scrollOffset)
+        term.setCursorBlink(true)
+    end
+end
 
 function View:drawLine(y)
     if type(y) ~= "number" then
@@ -76,7 +180,6 @@ function View:drawLine(y)
         end
     end
 end
-
 
 function View:drawStatusBar()
     local model = Model -- Use the singleton Model instance directly

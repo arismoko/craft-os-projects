@@ -99,3 +99,25 @@ KeyHandler:map("visual", "escape", "switch:normal")
 
 -- Insert mode keybindings
 KeyHandler:map("insert", "escape", "switch:normal")
+
+-- Debug related keybindings for testing
+KeyHandler:map("normal", "F1", function()
+    -- Create a new window
+    local keybindsWindow = View:createWindow(5, 5, 50, 15)
+    
+    -- Print all keybinds currently mapped
+    for mode, keyMap in pairs(KeyHandler.keyMap) do
+        keybindsWindow:print("Mode: " .. mode)
+        for key, _ in pairs(keyMap) do
+            keybindsWindow:print("  " .. key)
+        end
+    end
+    
+    -- Show the window
+    keybindsWindow:show()
+end)
+
+KeyHandler:map("normal", "F2", function()
+    View:closeAllWindows()
+end)
+
