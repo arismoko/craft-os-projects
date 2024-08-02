@@ -115,22 +115,9 @@ end)
 
 -- File and Screen Navigation
 KeyHandler:map("normal", "g", function()
-    local pressedG = false
-    return function(key)
-        if key == keys.g then
-            if pressedG then
-                Model.cursorY = 1
-                Model.cursorX = 1
-                pressedG = false
-                View:drawScreen()
-                Model:updateStatusBar("Moved to top of file")
-            else
-                pressedG = true
-            end
-        else
-            pressedG = false
-        end
-    end
+    --move to top of buffer
+    Model.cursorY = 1
+    Model.cursorX = 1
 end)
 
 KeyHandler:map("normal", "shift + g", function()
@@ -296,7 +283,7 @@ KeyHandler:map("normal", "f9", function()
 end)
 
 -- Miscellaneous
-KeyHandler:map("normal", "f1", function()
+KeyHandler:map("normal", "f3", function()
     local keybindsWindow = View:createWindow(1, 1)
     keybindsWindow:print("Current Keybindings:")
     for mode, keyMap in pairs(KeyHandler.keyMap) do
@@ -348,21 +335,24 @@ end)
 KeyHandler:map("visual", "y", function()
     Model:yankSelection()
     Model:endVisualMode()
+    Model:updateStatusBar("Yanked selection")
+    model:endVisualMode()
 end)
 
 KeyHandler:map("visual", "d", function()
     Model:cutSelection()
     View:drawScreen()
+    Model:endVisualMode()
 end)
 
 -- Mode Switching
-KeyHandler:map("visual", "escape", function()
+KeyHandler:map("visual", "f1", function()
     Model:endVisualMode()
 end)
 
 -- === Insert Mode Keybindings ===
 
 -- Mode Switching
-KeyHandler:map("insert", "escape", function()
+KeyHandler:map("insert", "f1", function()
     Model:switchMode("normal")
 end)

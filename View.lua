@@ -193,6 +193,7 @@ function View:drawLine(y)
 
     if model.buffer[lineIndex] then
         if model.isVisualMode and model.visualStartY and lineIndex >= math.min(model.visualStartY, model.cursorY) and lineIndex <= math.max(model.visualStartY, model.cursorY) then
+            -- Highlight the selected text
             local startX = 1
             local endX = #model.buffer[lineIndex]
             if lineIndex == model.visualStartY then startX = model.visualStartX end
@@ -208,6 +209,7 @@ function View:drawLine(y)
             term.setBackgroundColor(colors.black)
             term.write(afterHighlight)
         else
+            -- Draw normally without any highlight if not in visual mode
             term.write(model.buffer[lineIndex])
         end
     end

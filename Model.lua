@@ -111,7 +111,12 @@ function Model:endVisualMode()
     self.visualStartY = nil
     self.isVisualMode = false
     self:updateStatusBar("Exited visual mode")
+    
+    -- Redraw the screen to remove highlights
+    local view = getView()
+    view:drawScreen()
 end
+
 
 function Model:loadFile(name)
     self.filename = name
