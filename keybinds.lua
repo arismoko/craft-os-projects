@@ -100,24 +100,26 @@ KeyHandler:map("visual", "escape", "switch:normal")
 -- Insert mode keybindings
 KeyHandler:map("insert", "escape", "switch:normal")
 
--- Debug related keybindings for testing
 KeyHandler:map("normal", keys.f1, function()
-    -- Create a new window
-    local keybindsWindow = View:createWindow(5, 5, 50, 15)
-    
-    -- Print all keybinds currently mapped
+    -- Create a new window that uses the maximum available size
+    local keybindsWindow = View:createWindow(1, 1)
+
+    -- Print some text in the window
+    keybindsWindow:print("Current Keybindings:")
     for mode, keyMap in pairs(KeyHandler.keyMap) do
-        keybindsWindow:print("Mode: " .. mode)
+        keybindsWindow:writeline("Mode: " .. mode)
+        local i = 1
         for key, _ in pairs(keyMap) do
-            keybindsWindow:print("  " .. key)
+            keybindsWindow:write("  " .. i .. ": " .. key .. ",")
         end
     end
-    Model:updateStatusBar("Opened keybinds window")
+
     -- Show the window
     keybindsWindow:show()
 end)
 
-KeyHandler:map("normal", keys.f4, function()
+KeyHandler:map("normal", keys.f2, function()
     View:closeAllWindows()
 end)
+
 
