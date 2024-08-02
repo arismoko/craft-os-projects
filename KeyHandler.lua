@@ -70,6 +70,15 @@ function KeyHandler:map(mode, keyCombo, callback)
     print("Mapped key:", comboKey, "to mode:", mode)
 end
 
+function KeyHandler:mapKeyCode(mode, keyCode, callback)
+    if not self.keyMap[mode] then
+        self.keyMap[mode] = {}
+    end
+
+    self.keyMap[mode][keyCode] = callback
+    print("Mapped key code:", keyCode, "to mode:", mode)
+end
+
 function KeyHandler:handleKeyPress(key, isDown, model, view, commandHandler)
     if self.modifierKeys[key] then
         self.keyStates[self.modifierKeys[key]] = isDown
@@ -79,18 +88,11 @@ function KeyHandler:handleKeyPress(key, isDown, model, view, commandHandler)
         if self.keyStates["ctrl"] then table.insert(combo, "ctrl") end
         if self.keyStates["shift"] then table.insert(combo, "shift") end
         if self.keyStates["alt"] then table.insert(combo, "alt") end
-
-        -- Handle function keys
-        local keyName = keys.getName(key)
-        if keyName:match("^f%d+$") then
-            keyName = keyName:lower() -- Convert to lowercase to match "F1", "F2", etc.
-        end
-
-        table.insert(combo, keyName)
+        table.insert(combo, keys.getName(key))
         local comboKey = table.concat(combo, "+")
 
         if isDown then
-            local action = self.keyMap[model.mode][comboKey]
+            local action = self.keyMap[model.mode][comboKey] or self.keyMap[model.mode][key]
             if type(action) == "function" then
                 action()
             elseif type(action) == "string" then
