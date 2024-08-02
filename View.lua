@@ -71,7 +71,6 @@ function View:createWindow(x, y, width, height, backgroundColor, textColor)
     -- Function to close the window (restores the main buffer)
     function window:close()
         term.clear()
-        View:getInstance():drawScreen()
         View:getInstance().activeWindow = nil -- Clear the active window
     end
 
@@ -113,6 +112,7 @@ function View:closeAllWindows()
     end
     self.windows = {} -- Clear the windows table
     self.activeWindow = nil -- Clear the active window reference
+    self:drawScreen() -- Redraw the main screen
 end
 
 function View:drawScreen()
@@ -135,6 +135,9 @@ end
 function View:drawLine(y)
     if type(y) ~= "number" then
         error("Invalid argument: 'y' should be a number, but received a " .. type(y))
+    end
+    if self.activeWindow then
+        return -- Skip drawing if a window is active
     end
 
     local model = Model -- Use the singleton Model instance directly
