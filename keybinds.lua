@@ -46,7 +46,7 @@ KeyHandler:map("normal", "u", function()
     View:drawScreen()
 end)
 
-KeyHandler:map("normal", "ctrl + r", function()
+KeyHandler:map("normal", "ctrl + u", function()
     Model:redo()
     View:drawScreen()
 end)
