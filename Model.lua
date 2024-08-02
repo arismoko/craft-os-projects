@@ -104,6 +104,7 @@ function Model:startVisualMode()
     self.visualStartY = self.cursorY
     self.isVisualMode = true
     self:updateStatusBar("Entered visual mode")
+    self:switchMode("visual") -- Switch to visual mode
 end
 
 function Model:endVisualMode()
@@ -111,6 +112,7 @@ function Model:endVisualMode()
     self.visualStartY = nil
     self.isVisualMode = false
     self:updateStatusBar("Exited visual mode")
+    self:switchMode("normal") -- Switch back to normal mode
     
     -- Redraw the screen to remove highlights
     local view = getView()

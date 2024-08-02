@@ -274,8 +274,13 @@ KeyHandler:map("normal", "shift + semicolon", function()
     Model:switchMode("command")
 end)
 
+
 KeyHandler:map("normal", "v", function()
-    Model:startVisualMode()
+    if model.isVisualMode then
+        Model:endVisualMode()
+    else
+        Model:startVisualMode()
+    end
 end)
 
 KeyHandler:map("normal", "f9", function()
@@ -336,7 +341,6 @@ KeyHandler:map("visual", "y", function()
     Model:yankSelection()
     Model:endVisualMode()
     Model:updateStatusBar("Yanked selection")
-    model:endVisualMode()
 end)
 
 KeyHandler:map("visual", "d", function()
