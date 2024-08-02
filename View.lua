@@ -4,8 +4,9 @@ View.__index = View
 
 local instance
 
-function View:new(screenWidth, screenHeight)
+function View:new()
     if not instance then
+        local screenWidth, screenHeight = term.getSize()
         instance = {
             screenWidth = screenWidth,
             screenHeight = screenHeight
