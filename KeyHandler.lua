@@ -54,29 +54,32 @@ function KeyHandler:parseKeyCombo(combo)
 end
 
 function KeyHandler:map(mode, keyCombo, callback)
-    local modifiers, mainKey = self:parseKeyCombo(keyCombo)
-    local comboKey
-    if #modifiers > 0 then
-        comboKey = table.concat(modifiers, "+") .. (mainKey and "+" .. mainKey or "")
+    -- Check if keyCombo is a string or a key code
+    if type(keyCombo) == "string" then
+        -- Handle string-based key combinations
+        local modifiers, mainKey = self:parseKeyCombo(keyCombo)
+        local comboKey
+        if #modifiers > 0 then
+            comboKey = table.concat(modifiers, "+") .. (mainKey and "+" .. mainKey or "")
+        else
+            comboKey = mainKey
+        end
+
+        if not self.keyMap[mode] then
+            self.keyMap[mode] = {}
+        end
+
+        self.keyMap[mode][comboKey] = callback
+        print("Mapped key:", comboKey, "to mode:", mode)
     else
-        comboKey = mainKey
+        -- Handle direct key code bindings
+        if not self.keyMap[mode] then
+            self.keyMap[mode] = {}
+        end
+
+        self.keyMap[mode][keyCombo] = callback
+        print("Mapped key code:", keyCombo, "to mode:", mode)
     end
-
-    if not self.keyMap[mode] then
-        self.keyMap[mode] = {}
-    end
-
-    self.keyMap[mode][comboKey] = callback
-    print("Mapped key:", comboKey, "to mode:", mode)
-end
-
-function KeyHandler:mapKeyCode(mode, keyCode, callback)
-    if not self.keyMap[mode] then
-        self.keyMap[mode] = {}
-    end
-
-    self.keyMap[mode][keyCode] = callback
-    print("Mapped key code:", keyCode, "to mode:", mode)
 end
 
 function KeyHandler:handleKeyPress(key, isDown, model, view, commandHandler)
