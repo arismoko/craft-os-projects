@@ -129,7 +129,6 @@ function KeyHandler:handleKeyPress(key, isDown, model, view, commandHandler)
         end
     end
 end
-
 function KeyHandler:handleCharEvent(model, view)
     local firstInput = true  -- Flag to check if it's the first input
 
@@ -148,28 +147,136 @@ function KeyHandler:handleCharEvent(model, view)
                 model:backspace()
                 view:drawLine(model.cursorY - model.scrollOffset)
                 view:updateCursor()
-            elseif key == keys.enter then
-                model:enter()
+
+                -- Close the autocomplete window if it's open
+                if model.autocompleteWindow then
+                    model.autocompleteWindow:close()
+                    model.autocompleteWindow = nil
+                    model.suggestions = nil  -- Clear suggestions when window is closed
+                end
+            elseif key == keys.enter or key == keys.right then
+                if model.autocompleteWindow and model.suggestions then
+                    -- Confirm selection and insert it
+                    local selectedSuggestion = model.suggestions[1]  -- Get the first suggestion
+                    if selectedSuggestion then
+                        local currentWord = model:getWordAtCursor()
+                        local suffix = selectedSuggestion:sub(#currentWord + 1)
+                        model:insertChar(suffix)
+
+                        -- Move the cursor to the end of the line
+                        model.cursorX = #model.buffer[model.cursorY] + 1
+                    end
+                    model.autocompleteWindow:close()
+                    model.autocompleteWindow = nil
+                    model.suggestions = nil  -- Clear suggestions after selection
+                else
+                    model:enter()
+                end
                 view:drawScreen()
                 view:updateCursor()
             elseif key == keys.tab then
                 model:insertChar("\t")
+                view:drawLine(model.cursorY - model.scrollOffset)
                 view:updateCursor()
-            elseif key == keys.f1 then
+            elseif key == keys.f1 or key == keys.left then
                 model:switchMode("normal")
                 break -- Exit the char mode handling loop
+            elseif key == keys.up then
+                if model.autocompleteWindow and model.suggestions then
+                    -- Move the last suggestion to the front
+                    table.insert(model.suggestions, 1, table.remove(model.suggestions))
+                    view:showAutocompleteWindow(model.suggestions)
+                    model:updateStatusBar("new sugg. selected: " .. model.suggestions[1])
+                end
+            elseif key == keys.down then
+                if model.autocompleteWindow and model.suggestions then
+                    -- Move the first suggestion to the end
+                    table.insert(model.suggestions, table.remove(model.suggestions, 1))
+                    view:showAutocompleteWindow(model.suggestions)
+                    model:updateStatusBar("new sugg. selected: " .. model.suggestions[1])
+                end
+            elseif key == keys.esc then
+                if model.autocompleteWindow then
+                    model.autocompleteWindow:close()
+                    model.autocompleteWindow = nil
+                    model.suggestions = nil  -- Clear suggestions when window is closed
+                end
             end
+
+            -- Re-evaluate the need for autocomplete suggestions after any key press
+            if model.autocompleteWindow then
+                -- If the cursor is not over a word, close the autocomplete window
+                local currentWord = model:getWordAtCursor()
+                if #currentWord == 0 then
+                    model.autocompleteWindow:close()
+                    model.autocompleteWindow = nil
+                    model.suggestions = nil  -- Clear suggestions when window is closed
+                end
+            end
+
+            -- Re-open the autocomplete window if necessary
+            if not model.autocompleteWindow then
+                local prefix = model:getWordAtCursor()
+                if #prefix > 0 then -- Only open if the cursor is over a word
+                    local suggestions = model:getAutocompleteSuggestions(prefix)
+                    if #suggestions > 0 then
+                        model.suggestions = suggestions -- Store suggestions in the model for navigation
+                        model.autocompleteWindow = view:showAutocompleteWindow(suggestions)
+
+                        -- Immediately move the first suggestion to the top to indicate selection
+                        table.insert(model.suggestions, 1, table.remove(model.suggestions))
+                        model:updateStatusBar("new sugg. selected: " .. model.suggestions[1])
+                    end
+                end
+            end
+
+            -- Ensure the current line is always drawn to reflect the latest input
+            view:drawLine(model.cursorY - model.scrollOffset)
         end
     end
 end
+
+
 
 function KeyHandler:handleCharInput(char, model, view)
     if model.InputMode == "chars" then
         -- Handle character input when in insert mode
         model:insertChar(char)
-        view:updateCursor() -- Update cursor position after character insertion
+        
+        -- Clear the line before redrawing
+        term.setCursorPos(1, model.cursorY - model.scrollOffset)
+        term.clearLine()
+        
+        -- Redraw the line where the cursor is located
+        view:drawLine(model.cursorY - model.scrollOffset)
+        view:updateCursor()
+
+        -- Get the current word prefix at the cursor
+        local prefix = model:getWordAtCursor()
+
+        -- Get autocomplete suggestions for the prefix
+        local suggestions = model:getAutocompleteSuggestions(prefix)
+        
+        -- If there are suggestions, show the autocomplete window
+        if #suggestions > 0 then
+            -- Clear the previous autocomplete window if open
+            if model.autocompleteWindow then
+                model.autocompleteWindow:close()
+            end
+            
+            -- Show new autocomplete window with suggestions
+            model.autocompleteWindow = view:showAutocompleteWindow(suggestions)
+        else
+            -- Close the autocomplete window if no suggestions
+            if model.autocompleteWindow then
+                model.autocompleteWindow:close()
+                model.autocompleteWindow = nil
+            end
+        end
     end
 end
+
+
 
 function KeyHandler:handleInputEvent(mode, model, view, commandHandler)
     if model.InputMode == "keys" then

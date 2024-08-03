@@ -288,17 +288,27 @@ end
 function Model:switchMode(mode)
     self:saveToHistory()
     self.mode = mode
+
+    -- Close the autocomplete window if switching out of 'insert' mode
+    if mode ~= "insert" and self.autocompleteWindow then
+        self.autocompleteWindow:close()
+        self.autocompleteWindow = nil
+    end
+
     if mode == "insert" then
         self.InputMode = "chars"
     else
         self.InputMode = "keys"
     end
+
     self:updateStatusBar("Switched to " .. mode .. " mode")
+
     if mode == "command" then
         local commandHandler = require("CommandHandler"):getInstance()
         commandHandler:handleCommandInput(self, getView())
     end
 end
+
 
 function Model:saveToHistory()
     -- Deep copy the current state of the buffer, cursor positions, etc.
@@ -325,6 +335,101 @@ function table.deepCopy(orig)
     end
     return copy
 end
+
+
+
+function Model:getWordAtCursor()
+    local line = self.buffer[self.cursorY]
+    local startPos = self.cursorX
+
+    -- Extend the word detection to include periods (.) and colons (:)
+    while startPos > 1 and line:sub(startPos - 1, startPos - 1):match("[%w_%.:]") do
+        startPos = startPos - 1
+    end
+
+    return line:sub(startPos, self.cursorX - 1)
+end
+
+-- Hardcoded autocomplete keywords
+local autocompleteKeywords = {
+    "and", "break", "do", "else", "elseif", "end", "for", "function", "if", "in", 
+    "local", "nil", "not", "or", "repeat", "require", "return", "then", "until", 
+    "while", "View", "Model", "highlightLine", "createWindow"
+}
+
+-- Helper function to get the value of a nested key
+local function getNestedValue(root, pathParts)
+    local current = root
+    for _, part in ipairs(pathParts) do
+        if type(current) == "table" and current[part] then
+            current = current[part]
+        else
+            return nil
+        end
+    end
+    return current
+end
+
+-- Function to get autocomplete suggestions
+function Model:getAutocompleteSuggestions(prefix)
+    local suggestions = {}
+
+    -- Debugging: Show the current prefix being used for suggestions
+    self:updateStatusBar("Suggestions for: " .. prefix)
+
+    -- Handle prefix with . or :
+    local pathParts = {}
+    for part in prefix:gmatch("[^%.:]+") do
+        table.insert(pathParts, part)
+    end
+
+    if #pathParts > 1 then
+        -- We have a multi-level path like "term.r"
+        local baseParts = {table.unpack(pathParts, 1, #pathParts - 1)}
+        local lastPart = pathParts[#pathParts]
+        local baseValue = getNestedValue(_G, baseParts)
+
+        if type(baseValue) == "table" then
+            for name, _ in pairs(baseValue) do
+                if name:sub(1, #lastPart) == lastPart then
+                    table.insert(suggestions, table.concat(baseParts, ".") .. "." .. name)
+                end
+            end
+        end
+    else
+        -- Single level prefix or global variable/module
+        -- Include static keywords only if no dot is present
+        for _, keyword in ipairs(autocompleteKeywords) do
+            if keyword:sub(1, #prefix) == prefix then
+                table.insert(suggestions, keyword)
+            end
+        end
+
+        -- Dynamic suggestions from global environment
+        for name, value in pairs(_G) do
+            if type(name) == "string" and name:sub(1, #prefix) == prefix then
+                table.insert(suggestions, name)
+            end
+
+            -- If the value is a table, also suggest its keys
+            if type(value) == "table" then
+                for key in pairs(value) do
+                    if type(key) == "string" and key:sub(1, #prefix) == prefix then
+                        table.insert(suggestions, name .. "." .. key)
+                    end
+                end
+            end
+        end
+    end
+
+    -- Debugging: Show how many suggestions were found
+    self:updateStatusBar("Suggestions for: " .. prefix .. " (" .. #suggestions .. " found)")
+
+    return suggestions
+end
+
+
+
 
 
 return Model

@@ -1,61 +1,49 @@
--- Input Test Application
--- this was just a test
--- Table to track the state of modifier keys
-local keyStates = {
-    shift = false,
-    ctrl = false,
-    alt = false
-}
+-- example.lua
+local lexer = dofile("lexer/lexer.lua") -- Load the lexer library
+local lua_lexer = dofile("lexer/media/lexers/lua.lua") -- Load the Lua lexer
 
--- Modifier key mapping
-local modifierKeys = {
-    [keys.leftShift] = "shift",
-    [keys.rightShift] = "shift",
-    [keys.leftCtrl] = "ctrl",
-    [keys.rightCtrl] = "ctrl",
-    [keys.leftAlt] = "alt",
-    [keys.rightAlt] = "alt"
-}
+-- Sample Lua code to highlight
+local code = [[
+-- This is a comment
+local x = 42
+print("Hello, World!")
+]]
 
--- Function to handle key presses and releases
-local function handleKeyPress(key, isDown)
-    if modifierKeys[key] then
-        -- Update the state of the modifier key (pressed or released)
-        keyStates[modifierKeys[key]] = isDown
-        print("Modifier key:", keys.getName(key), "is now", isDown and "down" or "up")
-    else
-        -- Capture the key press/release and modifiers
-        local combo = {}
-        if keyStates["ctrl"] then table.insert(combo, "ctrl") end
-        if keyStates["shift"] then table.insert(combo, "shift") end
-        if keyStates["alt"] then table.insert(combo, "alt") end
-        table.insert(combo, keys.getName(key))
-        local comboKey = table.concat(combo, "+")
-
-        if isDown then
-            print("Key Pressed:", comboKey)
-        else
-            print("Key Released:", comboKey)
-        end
+-- Function to get tokens and apply styles
+function highlight_code(code)
+    local tokens = {}
+    for token, text in lua_lexer:lex(code) do
+        table.insert(tokens, {token = token, text = text})
     end
+    return tokens
 end
 
--- Main event loop
-local function eventLoop()
-    print("Starting input test. Press keys to see the output. Press 'q' to quit.")
-    while true do
-        local event, key = os.pullEvent()
-        if event == "key" then
-            handleKeyPress(key, true)
-            if key == keys.q then
-                print("Exiting input test.")
-                break
-            end
-        elseif event == "key_up" then
-            handleKeyPress(key, false)
-        end
+-- Function to draw the highlighted code in CraftOS
+function draw_highlighted_code(tokens)
+    term.clear()
+    term.setCursorPos(1, 1)
+    for _, part in ipairs(tokens) do
+        local color = get_color_for_token(part.token)
+        term.setTextColor(color)
+        term.write(part.text)
     end
+    term.setTextColor(colors.white)  -- Reset to default
 end
 
--- Run the event loop
-eventLoop()
+-- Map tokens to colors
+function get_color_for_token(token)
+    local token_colors = {
+        keyword = colors.blue,
+        string = colors.orange,
+        comment = colors.gray,
+        number = colors.yellow,
+        identifier = colors.white,
+        operator = colors.lightGray,
+        -- Add more mappings as needed
+    }
+    return token_colors[token] or colors.white
+end
+
+-- Run the example
+local tokens = highlight_code(code)
+draw_highlighted_code(tokens)
