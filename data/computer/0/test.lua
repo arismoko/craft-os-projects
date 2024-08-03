@@ -15,9 +15,6 @@ KeyHandler:map("normal", "j", function()
         Model.cursorY = Model.cursorY + 1
     end
     Model.cursorX = math.min(Model.cursorX, #Model.buffer[Model.cursorY] + 1)
-    if Model:updateScroll() then
-        Model:updateStatusBar(Model.mode)
-    end
 end)
 
 KeyHandler:map("normal", "k", function()
@@ -25,9 +22,6 @@ KeyHandler:map("normal", "k", function()
         Model.cursorY = Model.cursorY - 1
     end
     Model.cursorX = math.min(Model.cursorX, #Model.buffer[Model.cursorY] + 1)
-    if Model:updateScroll() then
-        Model:updateStatusBar(Model.mode)
-    end
 end)
 
 KeyHandler:map("normal", "l", function()
@@ -124,19 +118,18 @@ KeyHandler:map("normal", "g", function()
     --move to top of buffer
     Model.cursorY = 1
     Model.cursorX = 1
-    Model:updateScroll()
 end)
 
 KeyHandler:map("normal", "shift + g", function()
     Model.cursorY = #Model.buffer
     Model.cursorX = 1
-    Model:updateScroll()
 end)
 
 KeyHandler:map("normal", "shift + h", function()
     local screenStart = Model.scrollOffset + 1
     Model.cursorY = screenStart
     Model.cursorX = 1
+    View:drawScreen()
     Model:updateStatusBar("Moved to top of screen")
 end)
 
@@ -145,6 +138,7 @@ KeyHandler:map("normal", "shift + m", function()
     local screenMiddle = math.floor(screenHeight / 2)
     Model.cursorY = Model.scrollOffset + screenMiddle
     Model.cursorX = 1
+    View:drawScreen()
     Model:updateStatusBar("Moved to middle of screen")
 end)
 
@@ -153,6 +147,7 @@ KeyHandler:map("normal", "shift + l", function()
     local screenEnd = Model.scrollOffset + screenHeight - 1
     Model.cursorY = screenEnd
     Model.cursorX = 1
+    View:drawScreen()
     Model:updateStatusBar("Moved to bottom of screen")
 end)
 
@@ -161,6 +156,7 @@ KeyHandler:map("normal", "x", function()
     local line = Model.buffer[Model.cursorY]
     if Model.cursorX <= #line then
         Model.buffer[Model.cursorY] = line:sub(1, Model.cursorX - 1) .. line:sub(Model.cursorX + 1)
+        View:drawLine(Model.cursorY - Model.scrollOffset)
         Model:updateStatusBar("Deleted character")
     else
         Model:updateStatusError("Nothing to delete")
@@ -172,6 +168,7 @@ KeyHandler:map("normal", "shift + x", function()
     if Model.cursorX > 1 then
         Model.buffer[Model.cursorY] = line:sub(1, Model.cursorX - 2) .. line:sub(Model.cursorX)
         Model.cursorX = Model.cursorX - 1
+        View:drawLine(Model.cursorY - Model.scrollOffset)
         Model:updateStatusBar("Deleted character")
     else
         Model:updateStatusError("Nothing to delete")
@@ -180,6 +177,7 @@ end)
 
 KeyHandler:map("normal", "d", function()
     Model:cutLine()
+    View:drawScreen()
 end)
 
 KeyHandler:map("normal", "d + w", function()
@@ -192,6 +190,7 @@ KeyHandler:map("normal", "d + w", function()
     end
     Model.buffer[Model.cursorY] = line
     Model:updateStatusBar("Deleted word")
+    View:drawScreen()
 end)
 
 KeyHandler:map("normal", "c + w", function()
@@ -204,6 +203,7 @@ KeyHandler:map("normal", "c + w", function()
     end
     Model.buffer[Model.cursorY] = line
     Model:switchMode("insert")
+    View:drawScreen()
 end)
 
 KeyHandler:map("normal", "y", function()
@@ -212,15 +212,18 @@ end)
 
 KeyHandler:map("normal", "p", function()
     Model:paste()
+    View:drawLine(Model.cursorY - Model.scrollOffset)
     Model:updateStatusBar("Pasted text")
 end)
 
 KeyHandler:map("normal", "u", function()
     Model:undo()
+    View:drawScreen()
 end)
 
 KeyHandler:map("normal", "ctrl + u", function()
     Model:redo()
+    View:drawScreen()
 end)
 
 -- Mode Switching
@@ -255,6 +258,7 @@ KeyHandler:map("normal", "o", function()
     Model.cursorY = line + 1
     Model.cursorX = 1
     Model:switchMode("insert")
+    View:drawScreen()
 end)
 
 KeyHandler:map("normal", "shift + o", function()
@@ -263,6 +267,7 @@ KeyHandler:map("normal", "shift + o", function()
     Model.cursorY = line
     Model.cursorX = 1
     Model:switchMode("insert")
+    View:drawScreen()
 end)
 
 KeyHandler:map("normal", "shift + semicolon", function()
@@ -306,6 +311,7 @@ end)
 -- Basic Navigation
 KeyHandler:map("visual", "h", function()
     Model.cursorX = math.max(1, Model.cursorX - 1)
+    View:drawScreen()
 end)
 
 KeyHandler:map("visual", "j", function()
@@ -313,6 +319,7 @@ KeyHandler:map("visual", "j", function()
         Model.cursorY = Model.cursorY + 1
     end
     Model.cursorX = math.min(Model.cursorX, #Model.buffer[Model.cursorY] + 1)
+    View:drawScreen()
 end)
 
 KeyHandler:map("visual", "k", function()
@@ -320,10 +327,12 @@ KeyHandler:map("visual", "k", function()
         Model.cursorY = Model.cursorY - 1
     end
     Model.cursorX = math.min(Model.cursorX, #Model.buffer[Model.cursorY] + 1)
+    View:drawScreen()
 end)
 
 KeyHandler:map("visual", "l", function()
     Model.cursorX = math.min(#Model.buffer[Model.cursorY] + 1, Model.cursorX + 1)
+    View:drawScreen()
 end)
 
 
@@ -337,6 +346,7 @@ end)
 
 KeyHandler:map("visual", "d", function()
     Model:cutSelection()
+    View:drawScreen()
     Model:endVisualMode()
 end)
 
